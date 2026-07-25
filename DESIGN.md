@@ -1,0 +1,173 @@
+# UI Redesign Brief — Our Memory Lane
+
+บรีฟสำหรับออกแบบ UI ใหม่ทั้งเว็บ อ่านไฟล์นี้ก่อนแตะโค้ด
+ข้อมูล architecture/deploy อยู่ใน [CLAUDE.md](CLAUDE.md) — ไฟล์นี้พูดเรื่องหน้าตาอย่างเดียว
+
+---
+
+## 1. โปรเจกต์นี้คืออะไร
+
+Timeline ความทรงจำของคู่รัก 2 คน โฮสต์เองบน Raspberry Pi ที่บ้าน ไม่ได้ทำเป็นสินค้า ไม่มี user คนอื่น
+
+* `/` — timeline สาธารณะ ให้แฟนเปิดดู ส่งลิงก์ให้กันได้ (`noindex`)
+* `/login` `/admin` — หน้าหลังบ้านของเจ้าของเว็บ 2 คน
+
+**โทน:** อบอุ่น เป็นส่วนตัว เหมือนสมุดภาพมากกว่า dashboard
+หน้า `/` ควรรู้สึกเหมือนของขวัญ หน้า `/admin` ควรเรียบและใช้ง่าย ไม่ต้องสวยเท่าหน้าแรก
+
+**ภาษา:** ไทยล้วน `lang="th"` — ตัวอักษรไทยมีสระบน/ล่างและวรรณยุกต์ซ้อนกันได้ 2 ชั้น
+อย่าใช้ `leading-tight` กับ body text (สระจะชนกัน) และระวัง `truncate` กับหัวข้อยาว
+
+---
+
+## 2. ขอบเขต
+
+### แก้ได้เต็มที่
+
+| ไฟล์ | หน้าที่ |
+|---|---|
+| `apps/web/src/styles/global.css` | tokens, `.reveal`, keyframes, reduced-motion |
+| `apps/web/src/layouts/Base.astro` | โครง `<head>`/`<body>`, font, favicon |
+| `apps/web/src/pages/index.astro` | timeline สาธารณะ |
+| `apps/web/src/pages/login.astro` | ฟอร์ม login/register |
+| `apps/web/src/pages/admin.astro` | ฟอร์มเพิ่ม/แก้ + รายการ |
+
+สร้าง `src/components/*.astro` เพิ่มได้ถ้าช่วยให้อ่านง่ายขึ้นจริง (ตอนนี้ยังไม่มีเลย เพราะยังไม่จำเป็น)
+
+### ห้ามแตะ
+
+`src/lib/*` · `src/middleware.js` · `src/pages/logout.js` · `src/pages/uploads/[file].js`
+· `astro.config.mjs` · `Dockerfile` · `docker-compose.yml` · `package.json`
+
+---
+
+## 3. ข้อจำกัดที่ห้ามฝ่าฝืน
+
+ทุกข้อในนี้ถ้าฝ่าฝืนแล้วเว็บพังจริง ไม่ใช่เรื่องรสนิยม
+
+**1. ห้ามเพิ่ม dependency** ทั้งเว็บมี 4 ตัว (astro, @astrojs/node, tailwindcss, @tailwindcss/vite)
+ไม่มี UI kit ไม่มี icon package ไม่มี animation library — icon ใช้ inline SVG หรือ emoji
+อยากได้ฟอนต์เฉพาะ ต้อง self-host: วางไฟล์ใน `apps/web/public/fonts/` แล้ว `@font-face`
+**ห้ามลิงก์ Google Fonts หรือ CDN ใด ๆ** เพราะ origin อยู่วงในไม่มีเน็ตออก
+
+**2. Tailwind v4 ไม่มี `tailwind.config.js`** เพิ่มสีใหม่ต้องแก้ **3 ที่** ใน `global.css`:
+`:root` → บล็อก `@media (prefers-color-scheme: dark)` → `@theme inline`
+ถ้าลืมที่ใดที่หนึ่ง utility class จะไม่มีอยู่จริง หรือ dark mode จะเพี้ยน
+
+**3. dark mode ผ่าน `prefers-color-scheme` เท่านั้น** ห้ามใช้ `dark:` prefix ห้ามทำปุ่ม toggle
+ห้ามเก็บ theme ลง localStorage — สีมาจาก CSS variable ที่สลับค่าเองอยู่แล้ว
+
+**4. เว็บต้องอ่านได้เมื่อ JS ไม่ทำงาน** สองจุดนี้คือหัวใจ:
+* `.reveal` เริ่มที่ `opacity: 0` ได้ **เฉพาะ** ใต้ selector `.js .reveal` — class `js` ถูกใส่ด้วย
+  inline script ใน `<head>` ของ `Base.astro` ถ้าเขียนเป็น `.reveal { opacity: 0 }` เฉย ๆ
+  หน้าเว็บจะว่างเปล่าทันทีที่ JS พัง
+* `#counter` มีจำนวนวัน render มาจาก server อยู่แล้ว JS แค่มาเขียนทับให้ละเอียดขึ้น
+  ห้ามทำให้ element นี้ว่างตอนโหลด
+
+**5. animation ทุกตัวต้องถูกปิดใน `@media (prefers-reduced-motion: reduce)`** ท้าย `global.css`
+เพิ่ม keyframes ใหม่ = เพิ่มบรรทัดปิดในบล็อกนั้นด้วยเสมอ
+
+**6. ห้ามใส่ `will-change` ค้างไว้ใน CSS** เคยทำแล้วมันดันทุก element ขึ้น compositor layer ถาวร
+ถ้าจำเป็นจริงให้ใส่/ถอดด้วย JS เฉพาะช่วงที่ animate
+
+**7. ฟอร์มต้องเป็น `<form method="post">` ธรรมดา** ห้ามเปลี่ยนเป็น `fetch` / client-side validation
+ที่บล็อกการ submit — POST ถูก handle ใน frontmatter ของหน้าเดียวกันแล้ว redirect 303 กลับ
+`required` `minlength` `accept` ของ HTML ใช้ได้ปกติ
+
+**8. รูปที่ user อัปโหลดใช้ `<Image>` ของ `astro:assets` ไม่ได้** เพราะมันมาถึงหลัง build
+ต้องเป็น `<img src="/uploads/..." loading="lazy" decoding="async">` และต้องกันภาพกระโดด
+(ตอนนี้ใช้ `aspect-[4/3] object-cover` — เปลี่ยนสัดส่วนได้ แต่ต้องมี aspect ล็อกไว้)
+
+---
+
+## 4. Contract ที่ redesign มักทำพังเงียบ ๆ
+
+จัด layout ใหม่ได้ ย้าย element ได้ แต่ `name` / `id` / `type` พวกนี้ต้องอยู่ครบเหมือนเดิม
+
+**`/login`** — 2 ฟอร์ม แยกกันด้วย `<input type="hidden" name="intent">`
+
+| ฟอร์ม | fields |
+|---|---|
+| `intent=login` | `email` · `password` |
+| `intent=register` | `intent` · `name` · `email` · `password` (มีเฉพาะตอน user < 2 คน) |
+
+**`/admin`** — ฟอร์มหลักต้องมี `enctype="multipart/form-data"`
+
+| ฟอร์ม | fields |
+|---|---|
+| เพิ่ม/แก้ | `id` (hidden, เฉพาะตอนแก้) · `event_date` (`type="date"`) · `location` · `title` · `description` · `image` (`type="file"`) |
+| ลบ | `intent=delete` · `id` |
+| ออกจากระบบ | `action="/logout"` method post |
+
+* ลิงก์แก้ไขคือ `/admin?edit=<id>` — หน้าเดียวกัน ฟอร์มเดียวกัน แค่ prefill
+* `input[name=image]` ต้องคง `accept="image/jpeg,image/png,image/webp,image/gif"`
+* ปุ่มลบมี `onsubmit="return confirm(...)"` — เก็บไว้ (ถ้า JS ปิด ก็แค่ลบเลย ยอมรับได้)
+
+**`/`**
+
+* `#counter` + `data-start="YYYY-MM-DD"` — inline script ท้ายหน้าอ่านสองอย่างนี้
+* การ์ดแต่ละใบต้องมี class `reveal` ถึงจะเข้า IntersectionObserver
+* `<time datetime={e.event_date}>` เก็บ `datetime` ไว้
+
+ตัวแปรที่มีให้ใช้ต่อการ์ดหนึ่งใบ: `e.title` `e.description` `e.event_date` `e.location` `e.image`
+(`description` `location` `image` เป็น null ได้ — ต้องมี empty state ที่ไม่พัง)
+
+---
+
+## 5. ของที่มีอยู่ตอนนี้
+
+ธีม **ครีม–ดินเผา–เซจ** (organic warm) tokens ใน `global.css` — เปลี่ยนค่าได้อิสระ เพิ่ม/ลดชื่อได้ ขอแค่ครบ 3 ที่
+
+| token | light | dark | ใช้ทำอะไร |
+|---|---|---|---|
+| `--bg` | `#f5ead8` | `#1b1714` | พื้นหลังหน้า |
+| `--surface` | `#fffdf7` | `#262019` | การ์ดที่มีรูป, ฟอร์ม |
+| `--field` | `#f9f4ed` | `#201b16` | พื้น input |
+| `--text` | `#201e1d` | `#f7eedd` | หัวข้อ |
+| `--body` | `#474238` | `#d3c6b2` | ย่อหน้า |
+| `--muted` | `#82796a` | `#b3a693` | วันที่, ป้ายรอง |
+| `--line` | `#ded3bf` | `#3a332a` | เส้นขอบ, เส้น timeline |
+| `--accent` | `#c67139` | `#f6a06b` | พื้นปุ่ม, จุด timeline |
+| `--accent-ink` | `#b2622d` | `#f6a06b` | ลิงก์/ตัวเลขนับวัน (เข้มกว่าเพื่อผ่าน AA) |
+| `--sage` … `--sage-muted` | เขียวเซจ 6 ตัว | | การ์ดคำพูด, ฟอร์มสมัคร, รายการที่ไม่มีรูป |
+
+ฟอนต์: `--font-display` (Layiji Mahaniyom → Noto Serif Thai → fallback) สำหรับหัวข้อ, `--font-body` (Sarabun → Noto Sans Thai)
+**ยังไม่มีไฟล์ฟอนต์จริงในเครื่อง** — stack fallback ไป system font เงียบ ๆ ได้ไฟล์มาเมื่อไหร่ วางใน `public/fonts/` แล้วเพิ่ม `@font-face`
+
+* `.pulse` — จุดเต้น 2.4s (`ml-pulse`) บน eyebrow และใน empty state
+* `.js .reveal` / `.js .reveal.in` — fade + เลื่อนขึ้น 24px
+* layout: `max-w-5xl` หน้า `/`, `max-w-2xl` หน้า `/admin`, `max-w-3xl` หน้า `/login`
+* timeline desktop = zigzag รอบเส้นกลาง (`sm:grid-cols-2` + `sm:col-start-1/2` สลับตาม index), ≤640px ยุบเป็นคอลัมน์เดียว เส้นชิดซ้าย
+* การ์ด 3 แบบ: **มีรูป** (surface, รูป 4:3 full-bleed) · **ไม่มีรูปแต่มีเรื่องเล่า** (พื้นเซจ ตัวใหญ่ขึ้น) · **ไม่มีทั้งคู่** (surface กะทัดรัด)
+* `min-w-0` บนทุก grid item ในไทม์ไลน์ — ถ้าถอดออก จอ 375px จะเลื่อนแนวนอน
+
+---
+
+## 6. เป้าหมายที่อยากได้
+
+1. หน้า `/` ต้องรู้สึกพิเศษตั้งแต่หน้าจอแรก ตอนนี้จืดไป
+2. การ์ดความทรงจำควรมีจังหวะสายตา ไม่ใช่กล่องเรียงเท่ากันหมด (สลับซ้าย-ขวาบน desktop ก็ได้ แต่ mobile ต้องคอลัมน์เดียว)
+3. รูปคือพระเอก — ปัจจุบันการ์ดที่ไม่มีรูปกับมีรูปดูต่างกันเกินไป
+4. empty state ("ยังไม่มีความทรงจำ") ควรชวนให้เริ่มเขียน ไม่ใช่กล่องเทา
+5. `/admin` ควรกรอกจบใน scroll เดียวบนมือถือ
+6. mobile-first — เปิดจากมือถือเป็นหลัก
+
+---
+
+## 7. เช็กก่อนบอกว่าเสร็จ
+
+```bash
+npm run dev            # localhost:4321
+npm run build          # ต้องผ่าน
+```
+
+ไล่ดูด้วยตาทั้ง 6 ข้อ:
+
+- [ ] `/` `/login` `/admin` ปกติทั้ง light และ dark (สลับที่ System Settings → Appearance)
+- [ ] มือถือ 375px ไม่มี horizontal scroll
+- [ ] **ปิด JS** (DevTools → Command Palette → Disable JavaScript) แล้ว reload `/` — ต้องเห็นเนื้อหาครบและเห็นจำนวนวัน
+- [ ] เปิด reduced motion (macOS: System Settings → Accessibility → Display → Reduce motion) — ต้องไม่มีอะไรขยับ แต่เนื้อหายังเห็นครบ
+- [ ] กด Tab ไล่ทั้งหน้า — เห็น focus ring ทุกจุดที่โฟกัสได้ และคอนทราสต์ตัวอักษรผ่าน WCAG AA
+- [ ] เพิ่ม → แก้ (ไม่แนบรูปใหม่) → ลบ ที่ `/admin` ได้ครบ แล้วขึ้นบน `/` ถูกต้อง
+
+ข้อ 3, 4, 5 คือข้อที่ redesign ทำพังบ่อยที่สุด อย่าข้าม

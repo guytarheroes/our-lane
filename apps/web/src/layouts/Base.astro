@@ -1,0 +1,32 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+}
+
+const { title = 'Our Memory Lane' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#f5ead8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1b1714" media="(prefers-color-scheme: dark)" />
+    <title>{title}</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14'>💌</text></svg>"
+    />
+    <script is:inline>
+      document.documentElement.classList.add('js');
+    </script>
+  </head>
+  <!-- break-words = ตาข่ายกันคำยาวเกินกล่อง (เบราว์เซอร์ตัดคำไทยเองอยู่แล้ว อันนี้แค่กันเคสที่ตัดไม่ได้จริง ๆ) -->
+  <body class="min-h-dvh bg-bg font-body text-[15px] leading-[1.85] break-words text-body antialiased">
+    <slot />
+  </body>
+</html>

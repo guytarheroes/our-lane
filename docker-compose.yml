@@ -1,0 +1,20 @@
+services:
+  web:
+    build: .
+    container_name: our-lane-web
+    restart: unless-stopped
+    environment:
+      SESSION_SECRET: ${SESSION_SECRET:?ตั้งค่าใน .env ก่อน — ดู .env.example}
+      START_DATE: ${START_DATE:-2023-01-11}
+      COUPLE_NAME: ${COUPLE_NAME:-ทางเดินความทรงจำของเราสองคน}
+    volumes:
+      - our-lane-data:/data
+    networks:
+      - server_default
+
+volumes:
+  our-lane-data:
+
+networks:
+  server_default:
+    external: true

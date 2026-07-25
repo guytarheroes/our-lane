@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+/* เพิ่มสีใหม่ต้องแก้ 3 ที่: :root, บล็อก dark, และ @theme inline */
+:root {
+  --bg: #f5ead8;
+  --surface: #fffdf7;
+  --field: #f9f4ed;
+  --text: #201e1d;
+  --body: #474238;
+  --muted: #82796a;
+  --line: #ded3bf;
+  --accent: #c67139;      /* พื้นปุ่ม, จุด timeline */
+  --accent-ink: #b2622d;  /* ตัวอักษร/ลิงก์ — เข้มกว่า accent เพื่อให้ผ่าน AA บนพื้นครีม */
+  --sage: #8fa073;
+  --sage-bg: #eef2e2;
+  --sage-field: #f8fbef;
+  --sage-line: #d3d8c5;
+  --sage-ink: #2f3823;
+  --sage-muted: #56633f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1b1714;
+    --surface: #262019;
+    --field: #201b16;
+    --text: #f7eedd;
+    --body: #d3c6b2;
+    --muted: #b3a693;
+    --line: #3a332a;
+    --accent: #f6a06b;
+    --accent-ink: #f6a06b;
+    --sage: #aebf92;
+    --sage-bg: #242a1c;
+    --sage-field: #1d2416;
+    --sage-line: #424b36;
+    --sage-ink: #eef3e2;
+    --sage-muted: #ccdbb2;
+  }
+}
+
+/* ยังไม่มีไฟล์ฟอนต์ในเครื่อง — stack นี้ fallback ไป system font เงียบ ๆ
+   ได้ Layiji Mahaniyom มาเมื่อไหร่: วางใน public/fonts/ แล้วเพิ่ม @font-face
+   (font-display: swap) ที่นี่ ห้ามลิงก์ CDN — origin ไม่มีเน็ตออก */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-field: var(--field);
+  --color-text: var(--text);
+  --color-body: var(--body);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-sage: var(--sage);
+  --color-sage-bg: var(--sage-bg);
+  --color-sage-field: var(--sage-field);
+  --color-sage-line: var(--sage-line);
+  --color-sage-ink: var(--sage-ink);
+  --color-sage-muted: var(--sage-muted);
+
+  --font-display: "Layiji Mahaniyom", "Noto Serif Thai", "Sarabun", "Noto Sans Thai", serif;
+  --font-body: "Sarabun", "Noto Sans Thai", "Leelawadee UI", system-ui, sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+/* `.js` ถูกใส่ด้วย inline script ใน <head> ของ Base.astro
+   ถ้าลบ gate นี้ทิ้ง หน้าเว็บจะว่างเปล่าทันทีเมื่อ JS พัง */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.js .reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes ml-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.55; }
+}
+
+.pulse { animation: ml-pulse 2.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal,
+  .js .reveal.in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .pulse { animation: none; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

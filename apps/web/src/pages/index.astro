@@ -1,0 +1,220 @@
+---
+import Base from '../layouts/Base.astro';
+import { db } from '../lib/db.js';
+import { sinceThai } from '../lib/since.js';
+
+const startDate = process.env.START_DATE ?? '2023-01-11';
+const coupleName = process.env.COUPLE_NAME ?? 'ทางเดินความทรงจำของเราสองคน';
+
+const events = db
+  .prepare('SELECT * FROM event ORDER BY event_date ASC, id ASC')
+  .all();
+
+const long = new Intl.DateTimeFormat('th-TH', { dateStyle: 'long' });
+const medium = new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium' });
+const day = (iso: string) => new Date(`${iso}T00:00:00`);
+
+// render มาจาก server ก่อน แล้ว JS ค่อยเขียนทับให้เดินจริง — JS ตายก็ยังอ่านออก
+const elapsed = Date.now() - Date.parse(`${startDate}T00:00:00`);
+const days = Math.floor(elapsed / 86400000);
+const hours = Math.floor(elapsed / 3600000) % 24;
+const minutes = Math.floor(elapsed / 60000) % 60;
+const seconds = Math.floor(elapsed / 1000) % 60;
+
+const wrap = 'mx-auto w-full max-w-5xl px-5 sm:px-12';
+const stamp = 'font-mono text-[10.5px] font-medium uppercase tracking-[0.1em] sm:text-[11px]';
+const heading = 'font-display text-pretty';
+---
+
+<Base title={coupleName}>
+  <header class="border-b border-line">
+    <div class={`${wrap} pt-11 pb-9 sm:grid sm:grid-cols-[1fr_auto] sm:items-end sm:gap-10 sm:pt-[76px] sm:pb-[60px]`}>
+      <div>
+        <p class="mb-3.5 flex items-center gap-2.5 sm:mb-[18px]">
+          <span class="pulse block size-2 rounded-full bg-accent sm:size-[9px]"></span>
+          <span class="font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-muted sm:text-[11.5px]">
+            our memory lane
+          </span>
+        </p>
+        <h1 class={`${heading} max-w-[15ch] text-[34px] leading-[1.4] text-text sm:text-[58px] sm:leading-[1.35]`}>
+          {coupleName}
+        </h1>
+        <p class="mt-3.5 hidden max-w-[46ch] text-[16.5px] leading-[1.9] sm:block">
+          ที่เก็บวันธรรมดาที่ไม่ธรรมดา — เขียนไว้เพื่อจะได้อ่านซ้ำในอีกสิบปี
+        </p>
+      </div>
+
+      <div class="mt-5 sm:mt-0 sm:pb-1.5 sm:text-right">
+        <p
+          id="counter"
+          data-start={startDate}
+          class="font-display text-[28px] leading-[1.4] text-accent-ink tabular-nums sm:text-[52px] sm:leading-[1.3]"
+        >
+          {days.toLocaleString('th-TH')} วัน
+        </p>
+        {/* ponytail: render ฝั่ง server อย่างเดียว — บรรทัดนี้เปลี่ยนวันละครั้ง ไม่ต้อง tick
+            ceiling: เปิดหน้าค้างข้ามเที่ยงคืนแล้วจะช้าไปหนึ่งวันจนกว่าจะ reload */}
+        <p class="mt-0.5 text-[13px] leading-[1.7] sm:text-[15px]">{sinceThai(startDate)}</p>
+        <p id="counter-live" class="font-mono text-[11px] text-muted tabular-nums sm:text-[12px]">
+          {hours} ชั่วโมง {minutes} นาที {seconds} วินาที
+        </p>
+        <p class="mt-0.5 text-[12.5px] leading-[1.8] text-muted sm:text-[13.5px]">
+          นับจาก {long.format(day(startDate))}
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <main class={`${wrap} pt-10 pb-14 sm:pt-16 sm:pb-10`}>
+    {
+      events.length === 0 ? (
+        <div class="rounded-[26px] border-[1.5px] border-dashed border-accent/40 bg-surface px-6 py-9 text-center sm:px-10 sm:py-12">
+          <span class="mx-auto mb-5 flex size-13 items-center justify-center rounded-full bg-accent/15">
+            <span class="pulse block size-3 rounded-full bg-accent" />
+          </span>
+          <h2 class={`${heading} text-[24px] leading-[1.5] text-text`}>หน้านี้ยังว่างอยู่</h2>
+          <p class="mx-auto mt-2.5 max-w-[34ch] text-[14.5px] leading-[1.9]">
+            ความทรงจำแรกไม่ต้องยาว — วันที่ กับประโยคเดียวก็พอแล้ว
+          </p>
+          <a
+            href="/admin"
+            class="mt-5 inline-flex min-h-11 items-center rounded-full bg-accent px-6 text-[14.5px] font-medium text-bg"
+          >
+            เขียนความทรงจำแรก
+          </a>
+        </div>
+      ) : (
+        <div class="relative">
+          <div class="absolute top-1.5 bottom-1.5 left-[11px] w-px bg-line sm:left-1/2 sm:-translate-x-1/2" />
+          <ol class="relative grid gap-8 pl-7 sm:gap-16 sm:pl-0">
+            {events.map((e, i) => (
+              /* min-w-0 ทุกใบ = กัน grid item ขยายตาม min-content แล้วดันจอ 375px ให้เลื่อนแนวนอน */
+              <li class="reveal relative min-w-0 sm:grid sm:grid-cols-2 sm:gap-x-[72px]">
+                <span class="absolute top-6 -left-[23px] block size-3 rounded-full bg-accent ring-[3px] ring-bg sm:top-[26px] sm:left-1/2 sm:size-[13px] sm:-translate-x-1/2" />
+
+                {e.image ? (
+                  <article
+                    class:list={[
+                      'min-w-0 overflow-hidden rounded-[22px] border border-line bg-surface shadow-[0_3px_10px_rgba(46,43,37,0.10)] sm:rounded-[28px]',
+                      i % 2 === 0 ? 'sm:col-start-1' : 'sm:col-start-2',
+                    ]}
+                  >
+                    <img
+                      src={`/uploads/${e.image}`}
+                      alt={e.title}
+                      loading="lazy"
+                      decoding="async"
+                      class="aspect-[4/3] w-full object-cover"
+                    />
+                    <div class="px-5 pt-[18px] pb-[22px] sm:px-7 sm:pt-[26px] sm:pb-[30px]">
+                      <time datetime={e.event_date} class={`${stamp} block text-muted`}>
+                        {medium.format(day(e.event_date))}
+                      </time>
+                      <h2 class={`${heading} mt-2 text-[21px] leading-[1.5] text-text sm:text-[26px] sm:leading-[1.45]`}>
+                        {e.title}
+                      </h2>
+                      {e.description && (
+                        <p class="mt-2 text-[14.5px] leading-[1.9] sm:mt-2.5 sm:text-[15px]">{e.description}</p>
+                      )}
+                      {e.location && (
+                        <p class="mt-3 flex items-center gap-[7px] text-[12.5px] text-muted sm:text-[13px]">
+                          <span class="block size-[5px] rounded-full bg-sage" />
+                          {e.location}
+                        </p>
+                      )}
+                    </div>
+                  </article>
+                ) : e.description ? (
+                  /* ไม่มีรูป + มีเรื่องเล่า = "การ์ดคำพูด" พื้นเซจ ตัวใหญ่ขึ้น — ไม่ใช่การ์ดพิการ */
+                  <article
+                    class:list={[
+                      'min-w-0 rounded-[22px] border border-sage-line bg-sage-bg px-[22px] py-6 sm:rounded-[28px] sm:p-[34px]',
+                      i % 2 === 0 ? 'sm:col-start-1' : 'sm:col-start-2',
+                    ]}
+                  >
+                    <time datetime={e.event_date} class={`${stamp} block text-sage-muted`}>
+                      {medium.format(day(e.event_date))}
+                    </time>
+                    <h2 class={`${heading} mt-2.5 text-[23px] leading-[1.5] text-sage-ink sm:mt-3.5 sm:text-[30px] sm:leading-[1.45]`}>
+                      {e.title}
+                    </h2>
+                    <p class="mt-2 text-[15px] leading-[1.95] text-sage-ink/85 sm:mt-3 sm:text-[17px]">
+                      {e.description}
+                    </p>
+                    {e.location && (
+                      <p class="mt-3.5 flex items-center gap-[7px] text-[12.5px] text-sage-muted sm:text-[13px]">
+                        <span class="block size-[5px] rounded-full bg-sage" />
+                        {e.location}
+                      </p>
+                    )}
+                  </article>
+                ) : (
+                  <article
+                    class:list={[
+                      'min-w-0 rounded-[22px] border border-line bg-surface px-[22px] py-6 shadow-[0_3px_10px_rgba(46,43,37,0.10)] sm:rounded-[28px] sm:px-8 sm:py-8',
+                      i % 2 === 0 ? 'sm:col-start-1' : 'sm:col-start-2',
+                    ]}
+                  >
+                    <time datetime={e.event_date} class={`${stamp} block text-muted`}>
+                      {medium.format(day(e.event_date))}
+                    </time>
+                    <h2 class={`${heading} mt-2.5 text-[21px] leading-[1.5] text-text sm:mt-3 sm:text-[26px] sm:leading-[1.45]`}>
+                      {e.title}
+                    </h2>
+                    {e.location && (
+                      <p class="mt-3 flex items-center gap-[7px] text-[12.5px] text-muted sm:text-[13px]">
+                        <span class="block size-[5px] rounded-full bg-sage" />
+                        {e.location}
+                      </p>
+                    )}
+                  </article>
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )
+    }
+  </main>
+
+  <footer class="border-t border-line">
+    <div class={`${wrap} flex items-center justify-between gap-5 py-8 sm:py-10`}>
+      <span class="text-[13px] text-muted">ยังเขียนต่ออยู่</span>
+      <a
+        href="/admin"
+        class="inline-flex min-h-11 items-center rounded-full border border-accent-ink/35 px-5 text-[13.5px] font-medium text-accent-ink"
+      >
+        เพิ่มความทรงจำ
+      </a>
+    </div>
+  </footer>
+
+  <script is:inline>
+    const counter = document.getElementById('counter');
+    const live = document.getElementById('counter-live');
+    const start = Date.parse(counter.dataset.start + 'T00:00:00');
+    const tick = () => {
+      const ms = Date.now() - start;
+      const d = Math.floor(ms / 86400000);
+      counter.textContent = `${d.toLocaleString('th-TH')} วัน`;
+      live.textContent =
+        `${Math.floor(ms / 3600000) % 24} ชั่วโมง ` +
+        `${Math.floor(ms / 60000) % 60} นาที ` +
+        `${Math.floor(ms / 1000) % 60} วินาที`;
+    };
+    tick();
+    setInterval(tick, 1000);
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add('in');
+          io.unobserve(entry.target);
+        }
+      },
+      { rootMargin: '0px 0px -10% 0px' },
+    );
+    document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+  </script>
+</Base>

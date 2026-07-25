@@ -1,0 +1,11 @@
+{
+  "name": "our-lane",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/web",
+    "start": "npm run start -w apps/web",
+    "test": "npm test -w apps/web"
+  }
+}
