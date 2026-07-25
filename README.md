@@ -85,9 +85,16 @@ npm run build && npm start
 
 ### Deploy
 
+Production: **https://bibistang.guytarheroes.com** (Raspberry Pi arm64 หลัง Cloudflare Tunnel)
+
+push เข้า `main` แล้ว GitHub Actions จะ test → build → deploy บน Pi ผ่าน self-hosted runner
+แล้วแจ้งผลเข้า Discord ให้เอง
+
+รันมือบน Pi (เผื่อ runner ล่ม):
+
 ```bash
-cp .env.example .env && $EDITOR .env     # บน Pi
-docker compose up -d --build
+cp .env.example .env && $EDITOR .env
+docker compose -p our-lane up -d --build     # -p ต้องใส่ ไม่งั้นได้ volume ใหม่
 ```
 
-รายละเอียด architecture และข้อควรระวังอยู่ใน [CLAUDE.md](CLAUDE.md)
+รายละเอียด architecture, ตัวแปรที่ต้องตั้งใน repo settings และข้อควรระวังอยู่ใน [CLAUDE.md](CLAUDE.md)

@@ -1,0 +1,14 @@
+# ถ้าไม่มีไฟล์นี้ `COPY . .` จะทับ node_modules ที่ npm ci สร้างไว้ด้วยของ host (คนละ arch)
+# และลาก data/our-lane.db ของ dev เข้า image ไปด้วย
+node_modules
+**/node_modules
+dist
+**/dist
+.astro
+**/.astro
+data
+**/data
+.git
+.gitignore
+.env
+*.md
