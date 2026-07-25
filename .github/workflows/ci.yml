@@ -1,0 +1,118 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      # runner เป็น amd64 คนละ arch กับ Pi — step นี้มีไว้จับ Dockerfile พังเท่านั้น ไม่ push ไปไหน
+      - run: docker build -t our-lane:ci .
+
+  deploy:
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # runner ติดตั้งบน Pi เอง เพราะ Pi ไม่มี public IP และไม่เปิด port ให้ SSH เข้า
+    # ได้ arm64 + network server_default + docker daemon ครบในตัว
+    runs-on: self-hosted
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      # -p our-lane ตรึงชื่อ compose project — ถ้าไม่ตรึง compose จะตั้งชื่อตามชื่อโฟลเดอร์
+      # ย้ายโฟลเดอร์เมื่อไหร่ได้ volume ใหม่ = ความทรงจำหายทั้งหมด
+      - name: docker compose up
+        env:
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          START_DATE: ${{ vars.START_DATE }}
+          COUPLE_NAME: ${{ vars.COUPLE_NAME }}
+        run: docker compose -p our-lane up -d --build
+
+      - name: smoke check
+        run: |
+          for i in $(seq 1 15); do
+            if docker compose -p our-lane exec -T web \
+              node -e "fetch('http://127.0.0.1:4321/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+            then
+              echo "up"
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose -p our-lane logs --tail 60 web
+          exit 1
+
+      - name: prune old images
+        if: always()
+        run: docker image prune -f
+
+  notify:
+    needs: [check, deploy]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      # ส่ง context ผ่าน env: ไม่แปะ ${{ }} ลงใน run: ตรง ๆ — commit message เป็น input ที่ผู้อื่นแก้ได้
+      # และ jq --arg คือตัวที่ทำให้มันกลายเป็น JSON string เสมอ ไม่ใช่โค้ด
+      - name: แจ้ง Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          CHECK: ${{ needs.check.result }}
+          DEPLOY: ${{ needs.deploy.result }}
+          ACTOR: ${{ github.actor }}
+          MESSAGE: ${{ github.event.head_commit.message }}
+          SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SITE: https://bibistang.guytarheroes.com
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "ยังไม่ได้ตั้ง secret DISCORD_WEBHOOK — ข้ามการแจ้งเตือน"
+            exit 0
+          fi
+
+          if [ "$DEPLOY" = "success" ]; then
+            TITLE="🚀 ขึ้น production แล้ว"
+            COLOR=13005113
+          elif [ "$CHECK" != "success" ]; then
+            TITLE="❌ CI ไม่ผ่าน — ไม่ได้ deploy"
+            COLOR=12597547
+          else
+            TITLE="❌ deploy ล้มเหลว"
+            COLOR=12597547
+          fi
+
+          jq -n \
+            --arg title "$TITLE" \
+            --arg desc "$(printf '%s' "${MESSAGE:-(ไม่มีข้อความ commit)}" | head -1)" \
+            --arg sha "$(printf '%s' "$SHA" | cut -c1-7)" \
+            --arg actor "$ACTOR" \
+            --arg url "$RUN_URL" \
+            --arg site "$SITE" \
+            --argjson color "$COLOR" \
+            '{embeds:[{
+              title: $title,
+              url: $url,
+              color: $color,
+              description: $desc,
+              fields: [
+                {name: "commit", value: $sha, inline: true},
+                {name: "โดย", value: $actor, inline: true},
+                {name: "เว็บ", value: $site, inline: false}
+              ]
+            }]}' \
+            | curl -sS -f -X POST -H 'Content-Type: application/json' -d @- "$WEBHOOK"

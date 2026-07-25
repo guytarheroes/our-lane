@@ -38,6 +38,8 @@ schema ถูกสร้างด้วย `CREATE TABLE IF NOT EXISTS` ตอ�
 
 ## Deploy
 
+เว็บอยู่ที่ **https://bibistang.guytarheroes.com**
+
 ```
 Cloudflare edge → cloudflared (container) → nginx_proxy_manager → our-lane-web:4321
 ```
@@ -45,19 +47,47 @@ Cloudflare edge → cloudflared (container) → nginx_proxy_manager → our-lane
 Production คือ Raspberry Pi (Ubuntu 24.04, **arm64**) อยู่หลังเราเตอร์บ้าน ไม่มี public IP และ
 ไม่เปิด port ออกเน็ตเลย ทุก container อยู่ network `server_default` ซึ่ง `docker-compose.yml`
 ประกาศเป็น `external` — network นี้ไม่ได้ถูกสร้างโดย repo นี้
+`docker-compose.yml` ไม่ publish port ออกมาเลย — nginx_proxy_manager คุยกับมันด้วยชื่อ container
+`our-lane-web:4321` ผ่าน network นั้น
 
 ```bash
-git pull && docker compose up -d --build     # รันบน Pi
+docker compose -p our-lane up -d --build     # รันบน Pi (ปกติปล่อยให้ CI ทำ)
 ```
+
+**`-p our-lane` ต้องใส่ทุกครั้ง** ถ้าไม่ตรึงชื่อ project compose จะตั้งชื่อตามโฟลเดอร์ปัจจุบัน —
+รันจากโฟลเดอร์ CI กับรันมือจากอีกโฟลเดอร์จะได้คนละ volume แล้วความทรงจำ "หาย" ทั้งที่ไฟล์ยังอยู่
 
 **image ถูก build บน Pi ไม่ใช่ใน CI** เพราะ GitHub runner เป็น amd64 คนละ arch กัน
 
 TLS จบที่ Cloudflare — ห้ามเพิ่ม cert หรือ redirect https ที่ origin เพราะช่วงนี้เป็นวงในทั้งหมด
 
 **ทั้ง DB และรูปที่อัปโหลดอยู่ใน volume `our-lane-data` เดียวกัน** (`/data`) — backup คือ copy volume นี้
-`docker compose down -v` ลบความทรงจำทั้งหมดทิ้ง
+`docker compose -p our-lane down -v` ลบความทรงจำทั้งหมดทิ้ง
 
-`SESSION_SECRET` มาจาก `.env` บน Pi (compose จะไม่ยอมสตาร์ทถ้าไม่มี) เปลี่ยนค่านี้ = เตะทุกคนออกจากระบบ
+`SESSION_SECRET` มาจาก GitHub Secrets ตอน CI deploy หรือจาก `.env` บน Pi ตอนรันมือ
+(compose จะไม่ยอมสตาร์ทถ้าไม่มี) เปลี่ยนค่านี้ = เตะทุกคนออกจากระบบ
+
+## CI/CD
+
+`.github/workflows/ci.yml` มี 3 job:
+
+| job | runner | ทำอะไร |
+|---|---|---|
+| `check` | `ubuntu-latest` | `npm ci` → `npm test` → `npm run build` → `docker build` (amd64 ไว้จับ Dockerfile พังเท่านั้น ไม่ push) |
+| `deploy` | `self-hosted` (บน Pi) | `docker compose -p our-lane up -d --build` + smoke check + prune |
+| `notify` | `ubuntu-latest` | ยิง Discord webhook ทั้งตอนสำเร็จและตอนพัง |
+
+**deploy รันบน self-hosted runner ที่ติดตั้งบน Pi** ไม่ใช่ SSH เข้าไป เพราะ Pi ไม่เปิด port เข้า —
+runner ต่อขาออกไปหา GitHub เอง วิธีนี้ได้ arm64 + network `server_default` + docker daemon ครบในตัว
+
+ต้องตั้งใน repo settings ก่อน CI จะทำงานได้:
+
+* **Secrets** — `SESSION_SECRET` (บังคับ, `openssl rand -base64 32`), `DISCORD_WEBHOOK` (ถ้าไม่ตั้ง job `notify` จะข้ามไปเฉย ๆ ไม่พัง)
+* **Variables** — `START_DATE`, `COUPLE_NAME` (ไม่ตั้งก็ได้ compose มี default)
+
+**ห้ามแปะ `${{ }}` ลงใน `run:` ตรง ๆ** ส่ง GitHub context เข้า shell ผ่าน `env:` เสมอ — กัน script injection
+ใน job `notify` commit message เป็น input ที่แก้ได้จากภายนอก ตัวที่กันจริงคือ `jq --arg`
+ซึ่งบังคับให้ค่ากลายเป็น JSON string เสมอ ไม่ใช่ `echo` ประกอบ JSON เอง
 
 ## Conventions
 
