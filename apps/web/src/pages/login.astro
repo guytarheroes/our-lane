@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { db } from '../lib/db.js';
 import { COOKIE, hash, sign, verify } from '../lib/auth.js';
+import { reset, tooMany } from '../lib/ratelimit.js';
 
 if (Astro.locals.userId) return Astro.redirect('/admin');
 
@@ -16,8 +17,11 @@ if (Astro.request.method === 'POST') {
   const email = String(form.get('email') ?? '').trim().toLowerCase();
   const password = String(form.get('password') ?? '');
   const register = form.get('intent') === 'register';
+  const ip = Astro.clientAddress || 'unknown';
 
-  if (!email.includes('@') || password.length < 8) {
+  if (tooMany(ip)) {
+    error = 'ลองผิดหลายครั้งเกินไป รออีก 15 นาทีแล้วค่อยลองใหม่';
+  } else if (!email.includes('@') || password.length < 8) {
     error = 'ต้องกรอกอีเมลให้ถูกต้อง และรหัสผ่านอย่างน้อย 8 ตัวอักษร';
   } else if (register && !canRegister) {
     error = 'สมัครสมาชิกครบแล้ว';
@@ -26,15 +30,16 @@ if (Astro.request.method === 'POST') {
       const { lastInsertRowid } = db
         .prepare('INSERT INTO user (email, password, name) VALUES (?, ?, ?)')
         .run(email, hash(password), String(form.get('name') ?? '').trim() || null);
+      reset(ip);
       Astro.cookies.set('session', sign(Number(lastInsertRowid)), COOKIE);
       return Astro.redirect('/admin');
     } catch {
       error = 'อีเมลนี้ถูกใช้แล้ว';
     }
   } else {
-    // ponytail: ยังไม่ rate-limit — scrypt ช้าพออยู่แล้ว, เพิ่มเมื่อเว็บถูกยิงจริง
     const user = db.prepare('SELECT id, password FROM user WHERE email = ?').get(email);
     if (user && verify(password, user.password)) {
+      reset(ip);
       Astro.cookies.set('session', sign(user.id), COOKIE);
       return Astro.redirect('/admin');
     }
@@ -46,7 +51,7 @@ const label = 'grid gap-1.5 text-[13.5px] leading-[1.8]';
 const input =
   'min-h-11 w-full rounded-full border px-[18px] text-[15px] leading-[1.6] outline-none';
 const inputWarm = `${input} border-line bg-field text-text focus:border-accent`;
-const inputSage = `${input} border-sage-line bg-sage-field text-sage-ink focus:border-sage-muted`;
+const inputAlt = `${input} border-alt-line bg-alt-field text-alt-ink focus:border-alt-muted`;
 const card = 'grid gap-4 rounded-[26px] border p-[26px]';
 const button = 'min-h-11 rounded-full px-[22px] text-[15px] font-medium';
 ---
@@ -90,28 +95,28 @@ const button = 'min-h-11 rounded-full px-[22px] text-[15px] font-medium';
             required
           />
         </label>
-        <button class={`${button} bg-accent text-bg`}>เข้าสู่ระบบ</button>
+        <button class={`${button} bg-accent text-on-accent`}>เข้าสู่ระบบ</button>
       </form>
 
       {
         canRegister && (
-          <form method="post" class={`${card} border-sage-line bg-sage-bg`}>
+          <form method="post" class={`${card} border-alt-line bg-alt-bg`}>
             <input type="hidden" name="intent" value="register" />
-            <h2 class="font-display text-[20px] leading-[1.5] text-sage-ink">
-              ยังไม่มีบัญชี <span class="text-[13px] text-sage-muted">(เหลือ {2 - n} ที่)</span>
+            <h2 class="font-display text-[20px] leading-[1.5] text-alt-ink">
+              ยังไม่มีบัญชี <span class="text-[13px] text-alt-muted">(เหลือ {2 - n} ที่)</span>
             </h2>
-            <label class={`${label} text-sage-ink/85`}>
+            <label class={`${label} text-alt-ink/85`}>
               ชื่อ
-              <input class={inputSage} type="text" name="name" autocomplete="name" />
+              <input class={inputAlt} type="text" name="name" autocomplete="name" />
             </label>
-            <label class={`${label} text-sage-ink/85`}>
+            <label class={`${label} text-alt-ink/85`}>
               อีเมล
-              <input class={inputSage} type="email" name="email" autocomplete="username" required />
+              <input class={inputAlt} type="email" name="email" autocomplete="username" required />
             </label>
-            <label class={`${label} text-sage-ink/85`}>
-              รหัสผ่าน <span class="text-sage-muted">(อย่างน้อย 8 ตัว)</span>
+            <label class={`${label} text-alt-ink/85`}>
+              รหัสผ่าน <span class="text-alt-muted">(อย่างน้อย 8 ตัว)</span>
               <input
-                class={inputSage}
+                class={inputAlt}
                 type="password"
                 name="password"
                 minlength="8"
@@ -119,7 +124,7 @@ const button = 'min-h-11 rounded-full px-[22px] text-[15px] font-medium';
                 required
               />
             </label>
-            <button class={`${button} border border-sage-muted/45 text-sage-muted`}>สร้างบัญชี</button>
+            <button class={`${button} border border-alt-muted/45 text-alt-muted`}>สร้างบัญชี</button>
           </form>
         )
       }

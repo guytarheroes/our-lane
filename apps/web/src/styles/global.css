@@ -1,41 +1,44 @@
 @import "tailwindcss";
 
-/* เพิ่มสีใหม่ต้องแก้ 3 ที่: :root, บล็อก dark, และ @theme inline */
+/* palette: Old lace #fdf6ea · Gray #7c9cbe · Crimson red #8c0f06 · Barn red #560d07
+   เพิ่มสีใหม่ต้องแก้ 3 ที่: :root, บล็อก dark, และ @theme inline */
 :root {
-  --bg: #f5ead8;
-  --surface: #fffdf7;
-  --field: #f9f4ed;
-  --text: #201e1d;
-  --body: #474238;
-  --muted: #82796a;
-  --line: #ded3bf;
-  --accent: #c67139;      /* พื้นปุ่ม, จุด timeline */
-  --accent-ink: #b2622d;  /* ตัวอักษร/ลิงก์ — เข้มกว่า accent เพื่อให้ผ่าน AA บนพื้นครีม */
-  --sage: #8fa073;
-  --sage-bg: #eef2e2;
-  --sage-field: #f8fbef;
-  --sage-line: #d3d8c5;
-  --sage-ink: #2f3823;
-  --sage-muted: #56633f;
+  --bg: #fdf6ea;          /* Old lace */
+  --surface: #fffcf6;
+  --field: #f6ecdc;
+  --text: #560d07;        /* Barn red — หัวข้อ */
+  --body: #4a3833;
+  --muted: #7d5c56;
+  --line: #e5d6c2;
+  --accent: #8c0f06;      /* Crimson red — พื้นปุ่ม, จุด timeline */
+  --accent-ink: #8c0f06;
+  --on-accent: #fdf6ea;   /* ตัวอักษรบนพื้น accent — คงที่ทั้ง 2 โหมด */
+  --alt: #7c9cbe;         /* Gray — สีรอง */
+  --alt-bg: #e9f0f7;
+  --alt-field: #f3f8fc;
+  --alt-line: #c6d7e6;
+  --alt-ink: #1e3348;
+  --alt-muted: #3d5f80;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #1b1714;
-    --surface: #262019;
-    --field: #201b16;
-    --text: #f7eedd;
-    --body: #d3c6b2;
-    --muted: #b3a693;
-    --line: #3a332a;
-    --accent: #f6a06b;
-    --accent-ink: #f6a06b;
-    --sage: #aebf92;
-    --sage-bg: #242a1c;
-    --sage-field: #1d2416;
-    --sage-line: #424b36;
-    --sage-ink: #eef3e2;
-    --sage-muted: #ccdbb2;
+    --bg: #1a0b09;
+    --surface: #26100d;
+    --field: #1f0d0b;
+    --text: #fdf6ea;
+    --body: #e2d2c4;
+    --muted: #b39c94;
+    --line: #40201b;
+    --accent: #c9301f;
+    --accent-ink: #f2897b;
+    --on-accent: #fdf6ea;
+    --alt: #7c9cbe;
+    --alt-bg: #15222d;
+    --alt-field: #111c25;
+    --alt-line: #2c4256;
+    --alt-ink: #dceaf5;
+    --alt-muted: #a3c2dd;
   }
 }
 
@@ -52,12 +55,13 @@
   --color-line: var(--line);
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
-  --color-sage: var(--sage);
-  --color-sage-bg: var(--sage-bg);
-  --color-sage-field: var(--sage-field);
-  --color-sage-line: var(--sage-line);
-  --color-sage-ink: var(--sage-ink);
-  --color-sage-muted: var(--sage-muted);
+  --color-on-accent: var(--on-accent);
+  --color-alt: var(--alt);
+  --color-alt-bg: var(--alt-bg);
+  --color-alt-field: var(--alt-field);
+  --color-alt-line: var(--alt-line);
+  --color-alt-ink: var(--alt-ink);
+  --color-alt-muted: var(--alt-muted);
 
   --font-display: "Layiji Mahaniyom", "Noto Serif Thai", "Sarabun", "Noto Sans Thai", serif;
   --font-body: "Sarabun", "Noto Sans Thai", "Leelawadee UI", system-ui, sans-serif;

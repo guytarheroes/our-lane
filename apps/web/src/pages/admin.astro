@@ -148,7 +148,7 @@ const hatch =
           <span class="flex-1 text-muted">
             {editing ? 'ไม่เลือกไฟล์ใหม่ = เก็บรูปเดิมไว้' : 'jpg · png · webp · gif ไม่เกิน 8MB'}
             <input
-              class="mt-1.5 block w-full text-[12.5px] text-muted file:mr-2.5 file:rounded-full file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-[12px] file:font-medium file:text-bg"
+              class="mt-1.5 block w-full text-[12.5px] text-muted file:mr-2.5 file:rounded-full file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-[12px] file:font-medium file:text-on-accent"
               type="file"
               name="image"
               accept="image/jpeg,image/png,image/webp,image/gif"
@@ -166,7 +166,7 @@ const hatch =
           )
         }
         <button
-          class="min-h-12 flex-1 rounded-full bg-accent px-6 text-[15.5px] font-medium text-bg sm:min-h-11 sm:flex-none"
+          class="min-h-12 flex-1 rounded-full bg-accent px-6 text-[15.5px] font-medium text-on-accent sm:min-h-11 sm:flex-none"
         >
           {editing ? 'บันทึกการแก้ไข' : 'บันทึก'}
         </button>
@@ -184,7 +184,7 @@ const hatch =
               <li
                 class:list={[
                   'flex min-w-0 items-center gap-2.5 rounded-[18px] border p-3 sm:gap-3',
-                  e.image ? 'border-line bg-surface' : 'border-sage-line bg-sage-bg',
+                  e.image ? 'border-line bg-surface' : 'border-alt-line bg-alt-bg',
                 ]}
               >
                 {e.image ? (
@@ -195,7 +195,7 @@ const hatch =
                     class="size-12 flex-none rounded-xl object-cover"
                   />
                 ) : (
-                  <span class="flex size-12 flex-none items-center justify-center rounded-xl bg-sage/25 font-mono text-[9.5px] text-sage-muted">
+                  <span class="flex size-12 flex-none items-center justify-center rounded-xl bg-alt/25 font-mono text-[9.5px] text-alt-muted">
                     no img
                   </span>
                 )}
@@ -203,7 +203,7 @@ const hatch =
                   <span
                     class:list={[
                       'block truncate text-[14.5px] leading-[1.6]',
-                      e.image ? 'text-text' : 'text-sage-ink',
+                      e.image ? 'text-text' : 'text-alt-ink',
                     ]}
                   >
                     {e.title}
@@ -211,7 +211,7 @@ const hatch =
                   <span
                     class:list={[
                       'block font-mono text-[10.5px] leading-[1.7]',
-                      e.image ? 'text-muted' : 'text-sage-muted',
+                      e.image ? 'text-muted' : 'text-alt-muted',
                     ]}
                   >
                     {e.event_date}
@@ -221,7 +221,7 @@ const hatch =
                   href={`/admin?edit=${e.id}`}
                   class:list={[
                     pill,
-                    e.image ? 'border-accent-ink/35 text-accent-ink' : 'border-sage-muted/35 text-sage-muted',
+                    e.image ? 'border-accent-ink/35 text-accent-ink' : 'border-alt-muted/35 text-alt-muted',
                   ]}
                 >
                   แก้

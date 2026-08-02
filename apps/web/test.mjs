@@ -1,7 +1,9 @@
 // node test.mjs — ตรวจเฉพาะ logic ที่พังเงียบได้: auth กับการรับไฟล์
 import assert from 'node:assert/strict';
 import { hash, sign, unsign, verify } from './src/lib/auth.js';
-import { MAX_BYTES, pickName, safeServe } from './src/lib/upload.js';
+import { MAX_AGE_SEC } from './src/lib/auth.js';
+import { MAX_BYTES, pickName, safeServe, sniff } from './src/lib/upload.js';
+import { reset, tooMany } from './src/lib/ratelimit.js';
 import { since, sinceThai } from './src/lib/since.js';
 
 const stored = hash('correct horse battery');
@@ -10,15 +12,45 @@ assert.ok(!verify('wrong password', stored), 'รหัสผ่านผิด�
 assert.notEqual(hash('same'), hash('same'), 'salt ต้องต่างกันทุกครั้ง');
 assert.ok(!verify('x', 'ไม่มี-โคลอน'), 'ค่าที่เก็บพังต้องไม่ crash และไม่ผ่าน');
 
-assert.equal(unsign(sign(42)), 42, 'cookie ที่เราเซ็นเองต้องอ่านกลับได้');
+const t0 = Date.parse('2026-01-01T00:00:00Z');
+assert.equal(unsign(sign(42, t0), t0), 42, 'cookie ที่เราเซ็นเองต้องอ่านกลับได้');
 assert.equal(unsign('42.ปลอม'), null, 'ลายเซ็นปลอมต้องถูกปฏิเสธ');
 assert.equal(unsign('42'), null, 'ไม่มีลายเซ็นต้องถูกปฏิเสธ');
 assert.equal(unsign(undefined), null, 'ไม่มี cookie ต้องได้ null');
-assert.equal(unsign(sign(42).replace('42', '43')), null, 'แก้ user id แล้วลายเซ็นต้องไม่ตรง');
+assert.equal(unsign(sign(42, t0).replace('42.', '43.'), t0), null, 'แก้ user id แล้วลายเซ็นต้องไม่ตรง');
+
+// cookie ที่หลุดออกไปต้องหมดอายุเองแม้ browser จะเก็บไว้เกิน maxAge
+const old = sign(7, t0);
+assert.equal(unsign(old, t0 + (MAX_AGE_SEC - 60) * 1000), 7, 'ยังไม่ครบ 30 วันต้องใช้ได้');
+assert.equal(unsign(old, t0 + (MAX_AGE_SEC + 60) * 1000), null, 'เกิน 30 วันต้องหมดอายุ');
+assert.equal(unsign(old, t0 - 60_000), null, 'token จากอนาคตต้องถูกปฏิเสธ');
+assert.equal(unsign(`7.${Math.floor(t0 / 1000) + 999}.${old.split('.')[2]}`, t0), null, 'แก้เวลาแล้วลายเซ็นต้องไม่ตรง');
+
+// rate limit: ครั้งที่ 9 ในหน้าต่างเดียวกันต้องโดนบล็อก
+const k = 'test-ip';
+for (let i = 0; i < 8; i++) assert.equal(tooMany(k, {}, t0), false, `ครั้งที่ ${i + 1} ต้องผ่าน`);
+assert.equal(tooMany(k, {}, t0), true, 'ครั้งที่ 9 ต้องโดนบล็อก');
+assert.equal(tooMany(k, {}, t0 + 16 * 60_000), false, 'พ้นหน้าต่างแล้วต้องเริ่มนับใหม่');
+reset(k);
+assert.equal(tooMany(k, {}, t0), false, 'reset แล้วต้องเริ่มนับใหม่');
 
 assert.match(pickName('image/png', 1024), /^[0-9a-f-]{36}\.png$/, 'ต้องตั้งชื่อไฟล์ใหม่เอง');
 assert.throws(() => pickName('text/html', 10), /รองรับเฉพาะ/, 'ไฟล์ที่ไม่ใช่รูปต้องถูกปฏิเสธ');
+assert.throws(() => pickName(null, 10), /รองรับเฉพาะ/, 'sniff ไม่ออกต้องถูกปฏิเสธ');
 assert.throws(() => pickName('image/png', MAX_BYTES + 1), /ใหญ่เกิน/, 'ไฟล์เกินขนาดต้องถูกปฏิเสธ');
+
+// ดูไบต์จริง ไม่ใช่ content-type ที่ client บอก
+const bytes = (...a) => Uint8Array.from(a);
+assert.equal(sniff(bytes(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2)), 'image/png');
+assert.equal(sniff(bytes(0xff, 0xd8, 0xff, 0xe0)), 'image/jpeg');
+assert.equal(sniff(bytes(0x47, 0x49, 0x46, 0x38, 0x39, 0x61)), 'image/gif');
+assert.equal(
+  sniff(bytes(0x52, 0x49, 0x46, 0x46, 9, 9, 9, 9, 0x57, 0x45, 0x42, 0x50)),
+  'image/webp',
+);
+assert.equal(sniff(new TextEncoder().encode('<script>alert(1)</script>')), null, 'HTML ต้องไม่ผ่าน');
+assert.equal(sniff(bytes(0x89, 0x50)), null, 'ไฟล์สั้นกว่า magic ต้องไม่ crash');
+assert.equal(sniff(bytes(0x52, 0x49, 0x46, 0x46)), null, 'RIFF เปล่า ๆ ยังไม่ใช่ webp');
 
 assert.deepEqual(safeServe('a.png'), { file: 'a.png', type: 'image/png' });
 assert.equal(safeServe('../../etc/passwd'), null, 'path traversal ต้องถูกตัด');
