@@ -1,0 +1,365 @@
+---
+import Base from '../layouts/Base.astro';
+import { db } from '../lib/db.js';
+import { monthGrid, shiftMonth, thisMonth, validMonth } from '../lib/calendar.js';
+
+const coupleName = process.env.COUPLE_NAME ?? 'ทางเดินความทรงจำของเราสองคน';
+
+const span = db.prepare('SELECT MIN(event_date) AS lo, MAX(event_date) AS hi FROM event').get();
+const loMonth = span?.lo ? String(span.lo).slice(0, 7) : null;
+const hiMonth = span?.hi ? String(span.hi).slice(0, 7) : null;
+
+// query string เชื่อไม่ได้ — ผ่าน validMonth ก่อนเสมอ
+// เปิดมาเจอเดือนล่าสุดที่มีเรื่องเล่า ไม่ใช่เดือนปัจจุบันที่มักจะว่าง
+const q = Astro.url.searchParams;
+const month = validMonth(q.get('m')) ?? hiMonth ?? thisMonth();
+const pickerOpen = q.get('open') === '1' || q.get('pick') === 'year';
+
+const events = db
+  .prepare(
+    'SELECT id, title, event_date, image, location FROM event WHERE substr(event_date, 1, 7) = ? ORDER BY event_date, id',
+  )
+  .all(month);
+
+const peak = db
+  .prepare('SELECT MAX(c) AS peak FROM (SELECT COUNT(*) AS c FROM event GROUP BY substr(event_date, 1, 7))')
+  .get();
+
+const byDay = new Map();
+for (const e of events) {
+  const list = byDay.get(e.event_date) ?? [];
+  list.push(e);
+  byDay.set(e.event_date, list);
+}
+
+const count = events.length;
+const photos = events.filter((e) => e.image).length;
+const maxMonthly = Number(peak?.peak ?? 0);
+
+const prev = shiftMonth(month, -1);
+const next = shiftMonth(month, 1);
+const canPrev = loMonth !== null && prev >= loMonth;
+const canNext = next <= (hiMonth && hiMonth > thisMonth() ? hiMonth : thisMonth());
+
+const monthName = new Intl.DateTimeFormat('th-TH', { month: 'long', year: 'numeric' });
+const monthOnly = new Intl.DateTimeFormat('th-TH', { month: 'long' });
+const asDate = (iso) => new Date(`${iso}-01T00:00:00`);
+const today = new Date().toISOString().slice(0, 10);
+
+const cells = monthGrid(month);
+const weekdays = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+
+// ตัวเลือกของ dropdown — ปีเอาเท่าที่มีข้อมูลจริง บวกปีนี้และปีที่กำลังดูอยู่
+const yearOf = (ym) => Number(ym.slice(0, 4));
+const years = [
+  ...new Set([
+    ...(loMonth && hiMonth
+      ? Array.from({ length: yearOf(hiMonth) - yearOf(loMonth) + 1 }, (_, i) => yearOf(loMonth) + i)
+      : []),
+    yearOf(thisMonth()),
+    yearOf(month),
+  ]),
+].sort((a, b) => a - b);
+
+const yearLabel = new Intl.DateTimeFormat('th-TH', { year: 'numeric' });
+const monthShort = new Intl.DateTimeFormat('th-TH', { month: 'short' });
+const year = yearOf(month);
+
+// จุดใต้ชื่อเดือนบอกว่าเดือนไหนของปีนี้มีความทรงจำอยู่ จะได้ไม่ต้องกดเข้าไปดูทีละเดือน
+const filled = new Set(
+  db
+    .prepare(
+      'SELECT DISTINCT substr(event_date, 1, 7) AS ym FROM event WHERE substr(event_date, 1, 4) = ?',
+    )
+    .all(String(year))
+    .map((r) => r.ym),
+);
+
+const pickerMonths = Array.from({ length: 12 }, (_, i) => {
+  const mm = String(i + 1).padStart(2, '0');
+  return { mm, ym: `${year}-${mm}`, label: monthShort.format(new Date(2000, i, 1)) };
+});
+
+// picker มี 2 ชั้น: เลือกเดือน → กดที่ปีอีกทีเพื่อเลือกปี สถานะอยู่ใน URL ล้วน จะได้ไม่ต้องมี JS
+const pickYear = q.get('pick') === 'year';
+const yearsWithData = new Set(
+  db.prepare('SELECT DISTINCT substr(event_date, 1, 4) AS y FROM event').all().map((r) => r.y),
+);
+
+const cell =
+  'flex min-h-10 flex-col items-center justify-center rounded-xl text-[13px] text-body hover:bg-field';
+const dot = 'mt-0.5 block size-1 rounded-full';
+
+const wrap = 'mx-auto w-full max-w-3xl px-5 sm:px-10';
+const arrow =
+  'flex size-10 items-center justify-center rounded-full border border-line text-[18px] leading-none';
+
+// วงแหวน: r=54 → เส้นรอบวง 2πr
+const C = 2 * Math.PI * 54;
+const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
+---
+
+<Base title={`ปฏิทิน · ${coupleName}`}>
+  <header class={`${wrap} pt-11 pb-6 sm:pt-16`}>
+    <p class="mb-4 flex items-center gap-2.5">
+      <span class="pulse block size-2 rounded-full bg-accent"></span>
+      <span class="font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-muted">
+        our memory lane
+      </span>
+    </p>
+
+    <nav class="flex gap-2" aria-label="สลับมุมมอง">
+      <a
+        href="/"
+        class="inline-flex min-h-9 items-center rounded-full border border-line px-4 text-[13px] font-medium text-muted"
+      >
+        ไทม์ไลน์
+      </a>
+      <a
+        href="/calendar"
+        aria-current="page"
+        class="inline-flex min-h-9 items-center rounded-full bg-accent px-4 text-[13px] font-medium text-on-accent"
+      >
+        ปฏิทิน
+      </a>
+    </nav>
+  </header>
+
+  <main class={`${wrap} pb-16`}>
+    <div class="flex items-center justify-center gap-4">
+      {
+        canPrev ? (
+          <a href={`/calendar?m=${prev}`} class={arrow} aria-label={`ไป${monthName.format(asDate(prev))}`}>
+            ‹
+          </a>
+        ) : (
+          <span class={`${arrow} opacity-30`} aria-hidden="true">‹</span>
+        )
+      }
+      {/* <details> คือ disclosure ของ HTML เอง — กดเปิด/ปิดได้โดยไม่ต้องมี JS สักบรรทัด
+          และ screen reader ประกาศสถานะย่อ/ขยายให้เอง */}
+      <details class="relative" open={pickerOpen}>
+        <summary
+          class="flex cursor-pointer list-none items-center gap-1.5 rounded-full px-3 py-1 marker:hidden hover:bg-field [&::-webkit-details-marker]:hidden"
+        >
+          <h1 class="font-display text-[22px] leading-[1.45] text-text sm:text-[26px]">
+            {monthName.format(asDate(month))}
+          </h1>
+          <span class="text-[11px] text-muted" aria-hidden="true">▾</span>
+        </summary>
+
+        <div
+          class="absolute top-full left-1/2 z-10 mt-2 w-64 -translate-x-1/2 rounded-2xl border border-line bg-surface p-3 shadow-[0_8px_24px_rgba(46,43,37,0.16)]"
+        >
+          {
+            pickYear ? (
+              <>
+                <a
+                  href={`/calendar?m=${month}&open=1`}
+                  class="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[13px] text-muted hover:bg-field"
+                >
+                  <span aria-hidden="true">‹</span> เลือกเดือน
+                </a>
+                <div class="mt-2 grid max-h-64 grid-cols-3 gap-1.5 overflow-y-auto">
+                  {years.map((y) => (
+                    <a
+                      href={`/calendar?m=${y}-${month.slice(5)}&open=1`}
+                      aria-current={y === year ? 'page' : undefined}
+                      class:list={[cell, y === year && 'bg-accent text-on-accent hover:bg-accent']}
+                    >
+                      {yearLabel.format(new Date(y, 0, 1)).replace('พ.ศ. ', '')}
+                      <span
+                        class:list={[
+                          dot,
+                          yearsWithData.has(String(y))
+                            ? y === year
+                              ? 'bg-on-accent'
+                              : 'bg-accent'
+                            : 'bg-transparent',
+                        ]}
+                      />
+                    </a>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                {/* กดที่ปีอีกทีเพื่อสลับไปตารางเลือก พ.ศ. */}
+                <a
+                  href={`/calendar?m=${month}&open=1&pick=year`}
+                  class="mx-auto flex w-fit items-center gap-1.5 rounded-lg px-2 py-1 hover:bg-field"
+                >
+                  <span class="font-display text-[16px] text-text">
+                    {yearLabel.format(new Date(year, 0, 1))}
+                  </span>
+                  <span class="text-[10px] text-muted" aria-hidden="true">▾</span>
+                </a>
+                <div class="mt-2 grid grid-cols-3 gap-1.5">
+                  {pickerMonths.map((p) => (
+                    <a
+                      href={`/calendar?m=${p.ym}`}
+                      aria-current={p.ym === month ? 'page' : undefined}
+                      class:list={[cell, p.ym === month && 'bg-accent text-on-accent hover:bg-accent']}
+                    >
+                      {p.label}
+                      <span
+                        class:list={[
+                          dot,
+                          filled.has(p.ym) ? (p.ym === month ? 'bg-on-accent' : 'bg-accent') : 'bg-transparent',
+                        ]}
+                      />
+                    </a>
+                  ))}
+                </div>
+              </>
+            )
+          }
+        </div>
+      </details>
+      {
+        canNext ? (
+          <a href={`/calendar?m=${next}`} class={arrow} aria-label={`ไป${monthName.format(asDate(next))}`}>
+            ›
+          </a>
+        ) : (
+          <span class={`${arrow} opacity-30`} aria-hidden="true">›</span>
+        )
+      }
+    </div>
+
+    <div class="mt-8 flex items-center justify-center gap-5 sm:gap-8">
+      <div class="relative size-[136px] sm:size-[164px]">
+        <svg viewBox="0 0 120 120" class="size-full -rotate-90" aria-hidden="true">
+          <circle cx="60" cy="60" r="54" fill="none" stroke="var(--line)" stroke-width="7" />
+          <circle
+            cx="60" cy="60" r="54" fill="none"
+            stroke="var(--accent)" stroke-width="7" stroke-linecap="round"
+            stroke-dasharray={`${ring(count, maxMonthly) * C} ${C}`}
+          />
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <span class="font-display text-[34px] leading-none text-text sm:text-[40px]">{count}</span>
+          <span class="mt-1.5 text-[12px] text-muted">ความทรงจำ</span>
+        </div>
+      </div>
+
+      <div class="relative size-[104px] sm:size-[124px]">
+        <svg viewBox="0 0 120 120" class="size-full -rotate-90" aria-hidden="true">
+          <circle cx="60" cy="60" r="54" fill="none" stroke="var(--line)" stroke-width="8" />
+          <circle
+            cx="60" cy="60" r="54" fill="none"
+            stroke="var(--alt)" stroke-width="8" stroke-linecap="round"
+            stroke-dasharray={`${ring(photos, count) * C} ${C}`}
+          />
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <span class="font-display text-[26px] leading-none text-text sm:text-[30px]">{photos}</span>
+          <span class="mt-1 text-[11.5px] text-muted">รูป</span>
+        </div>
+      </div>
+    </div>
+
+    {/* ปฏิทินคือข้อมูลตาราง — <table> ทำให้ screen reader อ่านหัวคอลัมน์ได้เองโดยไม่ต้องใส่ ARIA */}
+    <table class="mt-9 w-full table-fixed border-separate border-spacing-1 sm:border-spacing-2">
+      <thead>
+        <tr>
+          {
+            weekdays.map((d) => (
+              <th
+                scope="col"
+                class="pb-2 font-mono text-[10.5px] font-medium tracking-[0.08em] text-muted uppercase"
+              >
+                {d}
+              </th>
+            ))
+          }
+        </tr>
+      </thead>
+      <tbody>
+        {
+          Array.from({ length: cells.length / 7 }, (_, w) => (
+            <tr>
+              {cells.slice(w * 7, w * 7 + 7).map((iso) => {
+                if (!iso) return <td class="p-0" />;
+
+                const day = Number(iso.slice(8));
+                const list = byDay.get(iso) ?? [];
+                const first = list[0];
+                const isToday = iso === today;
+
+                if (!first) {
+                  return (
+                    <td class="p-0">
+                      <div
+                        class:list={[
+                          'flex aspect-square items-center justify-center rounded-lg bg-field text-[12px] text-muted sm:rounded-xl sm:text-[13px]',
+                          isToday && 'ring-2 ring-accent',
+                        ]}
+                      >
+                        {day}
+                      </div>
+                    </td>
+                  );
+                }
+
+                const label = `${day} ${monthOnly.format(asDate(month))}: ${first.title}${list.length > 1 ? ` และอีก ${list.length - 1} เรื่อง` : ''}`;
+
+                return (
+                  <td class="p-0">
+                    <a
+                      href={`/#e${first.id}`}
+                      aria-label={label}
+                      class:list={[
+                        'relative block aspect-square overflow-hidden rounded-lg sm:rounded-xl',
+                        first.image ? 'bg-surface' : 'bg-alt-bg',
+                        isToday && 'ring-2 ring-accent',
+                      ]}
+                    >
+                      {first.image && (
+                        <img
+                          src={`/uploads/${first.image}`}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          class="size-full object-cover"
+                        />
+                      )}
+                      <span
+                        class:list={[
+                          'absolute top-0.5 left-0.5 rounded-md px-1 font-mono text-[10px] leading-[1.5] sm:top-1 sm:left-1 sm:text-[11px]',
+                          // รูปของ user สว่าง/มืดแค่ไหนก็ได้ — ต้องมีแถบทึบรองเลขวันเสมอ
+                          first.image ? 'bg-text/75 text-on-accent' : 'text-alt-muted',
+                        ]}
+                      >
+                        {day}
+                      </span>
+                      {!first.image && (
+                        <span class="absolute inset-0 m-auto block size-1.5 rounded-full bg-alt" />
+                      )}
+                      {list.length > 1 && (
+                        <span class="absolute right-0.5 bottom-0.5 rounded-md bg-accent px-1 font-mono text-[9.5px] leading-[1.6] text-on-accent sm:right-1 sm:bottom-1">
+                          +{list.length - 1}
+                        </span>
+                      )}
+                    </a>
+                  </td>
+                );
+              })}
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+
+    {
+      count === 0 && (
+        <p class="mt-8 text-center text-[14px] text-muted">
+          เดือนนี้ยังไม่มีความทรงจำ —{' '}
+          <a href="/admin" class="text-accent-ink underline underline-offset-4">
+            เขียนเพิ่ม
+          </a>
+        </p>
+      )
+    }
+  </main>
+</Base>

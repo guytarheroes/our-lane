@@ -5,7 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Overview
 
 npm-workspaces monorepo holding one Astro site: **Our Memory Lane** — timeline ความทรงจำของคู่รัก
-หน้าแรกเป็น timeline สาธารณะ (`noindex`) `/admin` เป็นหน้าบันทึกที่ต้องล็อกอิน
+**ทั้งเว็บเป็นของส่วนตัว ต้องล็อกอินก่อนถึงจะเห็นอะไรก็ตาม** (`noindex` ด้วย)
+`/` ไทม์ไลน์ · `/calendar` ปฏิทินรายเดือน · `/admin` หน้าบันทึก · `/login` ทางเข้าเดียวที่เปิด
 
 ## Commands
 
@@ -31,7 +32,11 @@ schema ถูกสร้างด้วย `CREATE TABLE IF NOT EXISTS` ตอ�
 แก้ schema แล้วต้องเขียน `ALTER TABLE` เอง `node:sqlite` ต้องใช้ **Node ≥ 22.5** (จะขึ้น ExperimentalWarning ตอนบูต ปกติ)
 
 **session คือ cookie ที่เซ็น HMAC** ไม่มีตาราง session — `sign()`/`unsign()` ใน `src/lib/auth.js`
-`src/middleware.js` กัน `/admin` ทั้ง GET และ POST ไว้แล้ว หน้าใน `/admin` ไม่ต้องเช็ก auth ซ้ำ
+token เซ็นเวลาที่ออกไปด้วยและตรวจอายุ 30 วันฝั่ง server (cookie ที่หลุดจะหมดอายุเอง)
+
+**`src/middleware.js` กันทั้งเว็บด้วย allowlist** เปิดแค่ `/login`, `/logout`, `/_astro/*`
+นอกนั้นเด้งไป `/login` หมด รวมถึง `/uploads/*` — **หน้าใหม่ที่เพิ่มทีหลังถูกกันให้อัตโนมัติ**
+ไม่ต้องกลับมาแก้ middleware และหน้าไหนก็ไม่ต้องเช็ก auth ซ้ำ
 
 **สมัครสมาชิกได้แค่ 2 คน** `login.astro` นับ user แล้วซ่อนฟอร์มสมัครเมื่อครบ — นี่คือระบบสิทธิ์ทั้งหมดที่มี
 ไม่มี role ไม่มี ownership ต่อ event

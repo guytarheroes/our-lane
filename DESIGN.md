@@ -9,8 +9,11 @@
 
 Timeline ความทรงจำของคู่รัก 2 คน โฮสต์เองบน Raspberry Pi ที่บ้าน ไม่ได้ทำเป็นสินค้า ไม่มี user คนอื่น
 
-* `/` — timeline สาธารณะ ให้แฟนเปิดดู ส่งลิงก์ให้กันได้ (`noindex`)
-* `/login` `/admin` — หน้าหลังบ้านของเจ้าของเว็บ 2 คน
+**ทั้งเว็บต้องล็อกอินก่อน** ไม่มีหน้าไหนเปิดสาธารณะเลย (`noindex` ด้วย)
+
+* `/` — ไทม์ไลน์แนวตั้ง เรียงตามเวลา
+* `/calendar` — ปฏิทินรายเดือน เอารูปของความทรงจำมาแปะบนช่องวันที่
+* `/login` `/admin` — ทางเข้าและหน้าบันทึกของเจ้าของเว็บ 2 คน
 
 **โทน:** อบอุ่น เป็นส่วนตัว เหมือนสมุดภาพมากกว่า dashboard
 หน้า `/` ควรรู้สึกเหมือนของขวัญ หน้า `/admin` ควรเรียบและใช้ง่าย ไม่ต้องสวยเท่าหน้าแรก
@@ -28,7 +31,8 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 |---|---|
 | `apps/web/src/styles/global.css` | tokens, `.reveal`, keyframes, reduced-motion |
 | `apps/web/src/layouts/Base.astro` | โครง `<head>`/`<body>`, font, favicon |
-| `apps/web/src/pages/index.astro` | timeline สาธารณะ |
+| `apps/web/src/pages/index.astro` | ไทม์ไลน์ |
+| `apps/web/src/pages/calendar.astro` | ปฏิทินรายเดือน + วงแหวนสถิติ |
 | `apps/web/src/pages/login.astro` | ฟอร์ม login/register |
 | `apps/web/src/pages/admin.astro` | ฟอร์มเพิ่ม/แก้ + รายการ |
 
@@ -36,7 +40,8 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 
 ### ห้ามแตะ
 
-`src/lib/*` · `src/middleware.js` · `src/pages/logout.js` · `src/pages/uploads/[file].js`
+`src/lib/*` (รวม `calendar.js` ที่คำนวณช่องปฏิทิน) · `src/middleware.js`
+· `src/pages/logout.js` · `src/pages/uploads/[file].js`
 · `astro.config.mjs` · `Dockerfile` · `docker-compose.yml` · `package.json`
 
 ---
@@ -102,8 +107,23 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 * `input[name=image]` ต้องคง `accept="image/jpeg,image/png,image/webp,image/gif"`
 * ปุ่มลบมี `onsubmit="return confirm(...)"` — เก็บไว้ (ถ้า JS ปิด ก็แค่ลบเลย ยอมรับได้)
 
+**`/calendar`**
+
+| พารามิเตอร์ | ใช้ตอนไหน |
+|---|---|
+| `?m=YYYY-MM` | เดือนที่กำลังดู — ลูกศร ‹ › และลิงก์ที่แปะให้กันใช้อันนี้ |
+| `?open=1` | เปิด date picker ค้างไว้หลังกดเลือกปี |
+| `?pick=year` | สลับ picker ไปชั้นเลือก พ.ศ. (เปิด picker ให้เองไม่ต้องมี `open=1`) |
+
+`m` ต้องผ่าน `validMonth()` ก่อนเสมอ ค่าที่ไม่ผ่านให้ตกไปเดือน default ห้าม 500
+
+**date picker เป็น `<details>` + `<a>` ล้วน ไม่มี JS** สถานะ 2 ชั้น (เลือกเดือน → เลือกปี)
+อยู่ใน URL ทั้งหมด ถ้าจะทำใหม่เป็น dropdown ที่ต้องใช้ JS จะพังกฎข้อ 4 และข้อ 7
+ช่องวันที่ลิงก์ไป `/#e<id>` — ผูกกับ `id` บน `<li>` ของไทม์ไลน์ ถ้าถอด `id` ออกปฏิทินจะลิงก์ไปไม่ถึง
+
 **`/`**
 
+* `<li id="e<id>">` ของแต่ละการ์ด — ปลายทางของลิงก์จากปฏิทิน อย่าถอดออก
 * `#counter` + `data-start="YYYY-MM-DD"` — inline script ท้ายหน้าอ่านสองอย่างนี้
 * การ์ดแต่ละใบต้องมี class `reveal` ถึงจะเข้า IntersectionObserver
 * `<time datetime={e.event_date}>` เก็บ `datetime` ไว้
@@ -165,7 +185,8 @@ npm run build          # ต้องผ่าน
 
 ไล่ดูด้วยตาทั้ง 6 ข้อ:
 
-- [ ] `/` `/login` `/admin` ต้องเป็นโทน Old lace แม้เครื่องตั้ง dark mode อยู่
+- [ ] `/` `/calendar` `/login` `/admin` ต้องเป็นโทน Old lace แม้เครื่องตั้ง dark mode อยู่
+- [ ] `/calendar` 7 คอลัมน์ที่ 320px ต้องไม่ล้น (จุดที่ล้นง่ายที่สุดในเว็บนี้)
 - [ ] มือถือ 375px ไม่มี horizontal scroll
 - [ ] **ปิด JS** (DevTools → Command Palette → Disable JavaScript) แล้ว reload `/` — ต้องเห็นเนื้อหาครบและเห็นจำนวนวัน
 - [ ] เปิด reduced motion (macOS: System Settings → Accessibility → Display → Reduce motion) — ต้องไม่มีอะไรขยับ แต่เนื้อหายังเห็นครบ

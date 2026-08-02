@@ -65,7 +65,23 @@ const heading = 'font-display text-pretty';
     </div>
   </header>
 
-  <main class={`${wrap} pt-10 pb-14 sm:pt-16 sm:pb-10`}>
+  <main class={`${wrap} pt-8 pb-14 sm:pt-12 sm:pb-10`}>
+    <nav class="mb-8 flex gap-2 sm:mb-12" aria-label="สลับมุมมอง">
+      <a
+        href="/"
+        aria-current="page"
+        class="inline-flex min-h-9 items-center rounded-full bg-accent px-4 text-[13px] font-medium text-on-accent"
+      >
+        ไทม์ไลน์
+      </a>
+      <a
+        href="/calendar"
+        class="inline-flex min-h-9 items-center rounded-full border border-line px-4 text-[13px] font-medium text-muted"
+      >
+        ปฏิทิน
+      </a>
+    </nav>
+
     {
       events.length === 0 ? (
         <div class="rounded-[26px] border-[1.5px] border-dashed border-accent/40 bg-surface px-6 py-9 text-center sm:px-10 sm:py-12">
@@ -89,7 +105,10 @@ const heading = 'font-display text-pretty';
           <ol class="relative grid gap-8 pl-7 sm:gap-16 sm:pl-0">
             {events.map((e, i) => (
               /* min-w-0 ทุกใบ = กัน grid item ขยายตาม min-content แล้วดันจอ 375px ให้เลื่อนแนวนอน */
-              <li class="reveal relative min-w-0 sm:grid sm:grid-cols-2 sm:gap-x-[72px]">
+              <li
+                id={`e${e.id}`}
+                class="reveal relative min-w-0 scroll-mt-8 sm:grid sm:grid-cols-2 sm:gap-x-[72px]"
+              >
                 <span class="absolute top-6 -left-[23px] block size-3 rounded-full bg-accent ring-[3px] ring-bg sm:top-[26px] sm:left-1/2 sm:size-[13px] sm:-translate-x-1/2" />
 
                 {e.image ? (

@@ -5,6 +5,7 @@ import { MAX_AGE_SEC } from './src/lib/auth.js';
 import { MAX_BYTES, pickName, safeServe, sniff } from './src/lib/upload.js';
 import { reset, tooMany } from './src/lib/ratelimit.js';
 import { since, sinceThai } from './src/lib/since.js';
+import { monthGrid, shiftMonth, thisMonth, validMonth } from './src/lib/calendar.js';
 
 const stored = hash('correct horse battery');
 assert.ok(verify('correct horse battery', stored), 'รหัสผ่านที่ถูกต้องต้องผ่าน');
@@ -70,5 +71,47 @@ for (const iso of ['2023-01-11', '2024-01-31', '2024-02-29', '2023-12-31']) {
   assert.ok(years >= 0 && months >= 0 && days >= 0, `${iso} ต้องไม่ติดลบ`);
   assert.ok(months < 12 && days < 32, `${iso} ต้องไม่ล้นหน่วย`);
 }
+
+// ---- ปฏิทิน ----
+assert.equal(validMonth('2026-07'), '2026-07');
+assert.equal(validMonth('2026-13'), null, 'เดือน 13 ไม่มีจริง');
+assert.equal(validMonth('2026-00'), null, 'เดือน 0 ไม่มีจริง');
+assert.equal(validMonth('2026-7'), null, 'ต้อง pad ศูนย์ — ฟอร์มเลือกเดือนส่ง MM มาเสมอ');
+assert.equal(validMonth('null-07'), null, 'ฟอร์มไม่ส่ง y มา ต้องตกไป fallback ไม่ใช่พัง');
+assert.equal(validMonth('../../etc/passwd'), null, 'query string เชื่อไม่ได้');
+assert.equal(validMonth(null), null);
+assert.match(thisMonth(new Date('2026-01-05T12:00:00')), /^\d{4}-\d{2}$/);
+assert.equal(thisMonth(new Date('2026-01-05T12:00:00')), '2026-01', 'เดือนต้อง pad ศูนย์');
+
+const days = (ym) => monthGrid(ym).filter(Boolean).length;
+assert.equal(days('2024-02'), 29, 'ก.พ. 2567 เป็นปีอธิกสุรทิน');
+assert.equal(days('2023-02'), 28, 'ก.พ. 2566 ไม่ใช่');
+assert.equal(days('2000-02'), 29, 'ปี 2000 หาร 400 ลงตัว = อธิกสุรทิน');
+assert.equal(days('1900-02'), 28, 'ปี 1900 หาร 100 ลงตัวแต่ไม่หาร 400');
+assert.equal(days('2026-01'), 31);
+assert.equal(days('2026-04'), 30);
+
+for (const ym of ['2024-02', '2026-01', '2026-08', '2027-11', '2023-12']) {
+  const [y, m] = ym.split('-').map(Number);
+  const cells = monthGrid(ym);
+
+  assert.equal(cells.length % 7, 0, `${ym} ต้องเต็มสัปดาห์พอดี`);
+  assert.equal(
+    cells.indexOf(`${ym}-01`),
+    new Date(y, m - 1, 1).getDay(),
+    `${ym} วันที่ 1 ต้องตกคอลัมน์เดียวกับวันในสัปดาห์จริง`,
+  );
+
+  const filled = cells.filter(Boolean);
+  assert.deepEqual(filled, [...filled].sort(), `${ym} วันที่ต้องเรียงจากน้อยไปมาก`);
+  // null ได้เฉพาะหัวกับท้าย ห้ามมีรูตรงกลางเดือน
+  const body = cells.slice(cells.indexOf(filled[0]), cells.lastIndexOf(filled.at(-1)) + 1);
+  assert.equal(body.filter(Boolean).length, body.length, `${ym} ห้ามมีช่องว่างกลางเดือน`);
+}
+
+assert.equal(shiftMonth('2026-01', -1), '2025-12', 'ถอยข้ามปี');
+assert.equal(shiftMonth('2026-12', 1), '2027-01', 'เดินหน้าข้ามปี');
+assert.equal(shiftMonth('2026-07', 0), '2026-07');
+assert.equal(shiftMonth('2026-03', -14), '2025-01', 'ข้ามหลายเดือน');
 
 console.log('ok');

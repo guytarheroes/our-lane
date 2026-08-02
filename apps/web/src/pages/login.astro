@@ -4,7 +4,7 @@ import { db } from '../lib/db.js';
 import { COOKIE, hash, sign, verify } from '../lib/auth.js';
 import { reset, tooMany } from '../lib/ratelimit.js';
 
-if (Astro.locals.userId) return Astro.redirect('/admin');
+if (Astro.locals.userId) return Astro.redirect('/');
 
 // ponytail: เว็บของคู่รัก = 2 บัญชี — ปิดสมัครเองเมื่อครบ ไม่ต้องมีระบบ invite
 const { n } = db.prepare('SELECT COUNT(*) AS n FROM user').get();
@@ -32,7 +32,7 @@ if (Astro.request.method === 'POST') {
         .run(email, hash(password), String(form.get('name') ?? '').trim() || null);
       reset(ip);
       Astro.cookies.set('session', sign(Number(lastInsertRowid)), COOKIE);
-      return Astro.redirect('/admin');
+      return Astro.redirect('/');
     } catch {
       error = 'อีเมลนี้ถูกใช้แล้ว';
     }
@@ -41,7 +41,7 @@ if (Astro.request.method === 'POST') {
     if (user && verify(password, user.password)) {
       reset(ip);
       Astro.cookies.set('session', sign(user.id), COOKIE);
-      return Astro.redirect('/admin');
+      return Astro.redirect('/');
     }
     error = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
   }
