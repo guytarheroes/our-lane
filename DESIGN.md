@@ -50,12 +50,11 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 อยากได้ฟอนต์เฉพาะ ต้อง self-host: วางไฟล์ใน `apps/web/public/fonts/` แล้ว `@font-face`
 **ห้ามลิงก์ Google Fonts หรือ CDN ใด ๆ** เพราะ origin อยู่วงในไม่มีเน็ตออก
 
-**2. Tailwind v4 ไม่มี `tailwind.config.js`** เพิ่มสีใหม่ต้องแก้ **3 ที่** ใน `global.css`:
-`:root` → บล็อก `@media (prefers-color-scheme: dark)` → `@theme inline`
-ถ้าลืมที่ใดที่หนึ่ง utility class จะไม่มีอยู่จริง หรือ dark mode จะเพี้ยน
+**2. Tailwind v4 ไม่มี `tailwind.config.js`** เพิ่มสีใหม่ต้องแก้ **2 ที่** ใน `global.css`:
+`:root` → `@theme inline` ถ้าลืมที่ใดที่หนึ่ง utility class จะไม่มีอยู่จริง
 
-**3. dark mode ผ่าน `prefers-color-scheme` เท่านั้น** ห้ามใช้ `dark:` prefix ห้ามทำปุ่ม toggle
-ห้ามเก็บ theme ลง localStorage — สีมาจาก CSS variable ที่สลับค่าเองอยู่แล้ว
+**3. ไม่มี dark mode** palette เป็นโทนสว่างล้วน พื้นหลังเป็น Old lace เสมอ
+ห้ามใช้ `dark:` prefix ห้ามทำปุ่ม toggle ห้ามเก็บ theme ลง localStorage
 
 **4. เว็บต้องอ่านได้เมื่อ JS ไม่ทำงาน** สองจุดนี้คือหัวใจ:
 * `.reveal` เริ่มที่ `opacity: 0` ได้ **เฉพาะ** ใต้ selector `.js .reveal` — class `js` ถูกใส่ด้วย
@@ -116,23 +115,23 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 
 ## 5. ของที่มีอยู่ตอนนี้
 
-ธีม **Old lace · Gray · Crimson red · Barn red** tokens ใน `global.css` — เปลี่ยนค่าได้อิสระ เพิ่ม/ลดชื่อได้ ขอแค่ครบ 3 ที่
+ธีม **Old lace · Gray · Crimson red · Barn red** tokens ใน `global.css` — เปลี่ยนค่าได้อิสระ เพิ่ม/ลดชื่อได้ ขอแค่ครบ 2 ที่
 
-| token | light | dark | ใช้ทำอะไร |
-|---|---|---|---|
-| `--bg` | `#fdf6ea` Old lace | `#1a0b09` | พื้นหลังหน้า |
-| `--surface` | `#fffcf6` | `#26100d` | การ์ดที่มีรูป, ฟอร์ม |
-| `--field` | `#f6ecdc` | `#1f0d0b` | พื้น input |
-| `--text` | `#560d07` Barn red | `#fdf6ea` | หัวข้อ |
-| `--body` | `#4a3833` | `#e2d2c4` | ย่อหน้า |
-| `--muted` | `#7d5c56` | `#b39c94` | วันที่, ป้ายรอง |
-| `--line` | `#e5d6c2` | `#40201b` | เส้นขอบ, เส้น timeline |
-| `--accent` | `#8c0f06` Crimson | `#c9301f` | พื้นปุ่ม, จุด timeline |
-| `--accent-ink` | `#8c0f06` | `#f2897b` | ลิงก์/ตัวเลขนับวัน |
-| `--on-accent` | `#fdf6ea` | `#fdf6ea` | **ตัวอักษรบนพื้น accent — คงที่ทั้ง 2 โหมด** ห้ามใช้ `text-bg` แทน ไม่งั้น dark จะได้ดำบนแดง 3.58:1 |
-| `--alt` … `--alt-muted` | ฟ้าหม่น `#7c9cbe` 6 ตัว | | การ์ดคำพูด, ฟอร์มสมัคร, รายการที่ไม่มีรูป |
+| token | ค่า | ใช้ทำอะไร |
+|---|---|---|
+| `--bg` | `#fdf6ea` Old lace | พื้นหลังหน้า |
+| `--surface` | `#fffcf6` | การ์ดที่มีรูป, ฟอร์ม |
+| `--field` | `#f6ecdc` | พื้น input |
+| `--text` | `#560d07` Barn red | หัวข้อ |
+| `--body` | `#4a3833` | ย่อหน้า |
+| `--muted` | `#7d5c56` | วันที่, ป้ายรอง |
+| `--line` | `#e5d6c2` | เส้นขอบ, เส้น timeline |
+| `--accent` | `#8c0f06` Crimson | พื้นปุ่ม, จุด timeline |
+| `--accent-ink` | `#8c0f06` | ลิงก์/ตัวเลขนับวัน |
+| `--on-accent` | `#fdf6ea` | ตัวอักษรบนพื้น accent — ใช้ token นี้เสมอ ห้ามใช้ `text-bg` |
+| `--alt` … `--alt-muted` | ฟ้าหม่น `#7c9cbe` 6 ตัว | การ์ดคำพูด, ฟอร์มสมัคร, รายการที่ไม่มีรูป |
 
-คู่สีทุกคู่ผ่าน WCAG AA แล้ว (ตัวปกติ ≥ 4.5:1, หัวข้อ ≥ 3:1) ทั้ง light และ dark — เปลี่ยนค่าแล้ววัดใหม่ด้วย
+คู่สีทุกคู่ผ่าน WCAG AA แล้ว (ตัวปกติ ≥ 4.5:1, หัวข้อ ≥ 3:1) — เปลี่ยนค่าแล้ววัดใหม่ด้วย
 
 ฟอนต์: `--font-display` (Layiji Mahaniyom → Noto Serif Thai → fallback) สำหรับหัวข้อ, `--font-body` (Sarabun → Noto Sans Thai)
 **ยังไม่มีไฟล์ฟอนต์จริงในเครื่อง** — stack fallback ไป system font เงียบ ๆ ได้ไฟล์มาเมื่อไหร่ วางใน `public/fonts/` แล้วเพิ่ม `@font-face`
@@ -141,7 +140,7 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 * `.js .reveal` / `.js .reveal.in` — fade + เลื่อนขึ้น 24px
 * layout: `max-w-5xl` หน้า `/`, `max-w-2xl` หน้า `/admin`, `max-w-3xl` หน้า `/login`
 * timeline desktop = zigzag รอบเส้นกลาง (`sm:grid-cols-2` + `sm:col-start-1/2` สลับตาม index), ≤640px ยุบเป็นคอลัมน์เดียว เส้นชิดซ้าย
-* การ์ด 3 แบบ: **มีรูป** (surface, รูป 4:3 full-bleed) · **ไม่มีรูปแต่มีเรื่องเล่า** (พื้นเซจ ตัวใหญ่ขึ้น) · **ไม่มีทั้งคู่** (surface กะทัดรัด)
+* การ์ด 3 แบบ: **มีรูป** (surface, รูป 4:3 full-bleed) · **ไม่มีรูปแต่มีเรื่องเล่า** (พื้นฟ้าหม่น ตัวใหญ่ขึ้น) · **ไม่มีทั้งคู่** (surface กะทัดรัด)
 * `min-w-0` บนทุก grid item ในไทม์ไลน์ — ถ้าถอดออก จอ 375px จะเลื่อนแนวนอน
 
 ---
@@ -166,7 +165,7 @@ npm run build          # ต้องผ่าน
 
 ไล่ดูด้วยตาทั้ง 6 ข้อ:
 
-- [ ] `/` `/login` `/admin` ปกติทั้ง light และ dark (สลับที่ System Settings → Appearance)
+- [ ] `/` `/login` `/admin` ต้องเป็นโทน Old lace แม้เครื่องตั้ง dark mode อยู่
 - [ ] มือถือ 375px ไม่มี horizontal scroll
 - [ ] **ปิด JS** (DevTools → Command Palette → Disable JavaScript) แล้ว reload `/` — ต้องเห็นเนื้อหาครบและเห็นจำนวนวัน
 - [ ] เปิด reduced motion (macOS: System Settings → Accessibility → Display → Reduce motion) — ต้องไม่มีอะไรขยับ แต่เนื้อหายังเห็นครบ

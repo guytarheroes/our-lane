@@ -97,8 +97,8 @@ DatePicker คือ `<input type="date">` และ animation ทั้งห�
 
 **Tailwind v4 ไม่มี `tailwind.config.js`** ต่อผ่าน `@tailwindcss/vite` ใน `astro.config.mjs`
 สีทั้งหมดประกาศเป็น CSS variable บน `:root` แล้ว map เข้า utility ด้วย `@theme inline`
-ใน `src/styles/global.css` — dark mode จึงทำงานผ่าน `prefers-color-scheme` โดยไม่ต้องมี `dark:` prefix
-เพิ่มสีใหม่ต้องแก้ทั้ง 3 ที่: `:root`, บล็อก dark, และ `@theme inline`
+ใน `src/styles/global.css` — เพิ่มสีใหม่ต้องแก้ **2 ที่**: `:root` และ `@theme inline`
+**ไม่มี dark mode** palette เป็นโทนสว่างล้วน พื้นหลังเป็น Old lace เสมอ ห้ามใช้ `dark:` prefix
 
 **เว็บต้องอ่านได้เมื่อ JS ไม่ทำงาน** `.reveal` เริ่มที่ `opacity: 0` แต่ selector คือ `.js .reveal`
 โดย class `js` ถูกใส่ด้วย inline script ใน `<head>` ของ `Base.astro` — ถ้าลบ gate นี้ทิ้ง

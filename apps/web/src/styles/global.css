@@ -21,26 +21,9 @@
   --alt-muted: #3d5f80;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1a0b09;
-    --surface: #26100d;
-    --field: #1f0d0b;
-    --text: #fdf6ea;
-    --body: #e2d2c4;
-    --muted: #b39c94;
-    --line: #40201b;
-    --accent: #c9301f;
-    --accent-ink: #f2897b;
-    --on-accent: #fdf6ea;
-    --alt: #7c9cbe;
-    --alt-bg: #15222d;
-    --alt-field: #111c25;
-    --alt-line: #2c4256;
-    --alt-ink: #dceaf5;
-    --alt-muted: #a3c2dd;
-  }
-}
+/* ไม่มี dark mode — palette นี้เป็นโทนสว่างล้วน พื้นหลังเป็น Old lace เสมอ
+   อยากได้ dark กลับมา: เพิ่มบล็อก @media (prefers-color-scheme: dark) ที่นี่
+   แล้วประกาศ token ชุดเดิมทับ ไม่ต้องแตะไฟล์อื่น */
 
 /* ยังไม่มีไฟล์ฟอนต์ในเครื่อง — stack นี้ fallback ไป system font เงียบ ๆ
    ได้ Layiji Mahaniyom มาเมื่อไหร่: วางใน public/fonts/ แล้วเพิ่ม @font-face
