@@ -17,7 +17,7 @@ const pickerOpen = q.get('open') === '1' || q.get('pick') === 'year';
 
 const events = db
   .prepare(
-    'SELECT id, title, event_date, image, location FROM event WHERE substr(event_date, 1, 7) = ? ORDER BY event_date, id',
+    'SELECT id, title, event_date, image, location, rating FROM event WHERE substr(event_date, 1, 7) = ? ORDER BY event_date, id',
   )
   .all(month);
 
@@ -335,6 +335,11 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
                       </span>
                       {!first.image && (
                         <span class="absolute inset-0 m-auto block size-1.5 rounded-full bg-alt" />
+                      )}
+                      {first.rating && (
+                        <span class="absolute bottom-0.5 left-0.5 rounded bg-text/75 px-1 font-mono text-[8.5px] leading-[1.7] text-on-accent sm:bottom-1 sm:left-1 sm:text-[9.5px]">
+                          ★{first.rating}
+                        </span>
                       )}
                       {list.length > 1 && (
                         <span class="absolute right-0.5 bottom-0.5 rounded-md bg-accent px-1 font-mono text-[9.5px] leading-[1.6] text-on-accent sm:right-1 sm:bottom-1">

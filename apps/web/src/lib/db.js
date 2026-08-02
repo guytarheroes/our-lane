@@ -28,3 +28,8 @@ db.exec(`
     location    TEXT
   );
 `);
+
+// ไม่มี migration tool — เพิ่มคอลัมน์เองแบบ idempotent
+// เช็ค table_info ก่อนแทน try/catch เพราะ catch เปล่า ๆ จะกลืน error จริงที่ควรดัง
+const columns = new Set(db.prepare('PRAGMA table_info(event)').all().map((c) => c.name));
+if (!columns.has('rating')) db.exec('ALTER TABLE event ADD COLUMN rating INTEGER');

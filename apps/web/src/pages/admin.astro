@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { db, UPLOAD_DIR } from '../lib/db.js';
 import { removeImage, saveImage } from '../lib/upload.js';
+import { parseRating } from '../lib/event.js';
 
 let error = '';
 
@@ -22,6 +23,7 @@ if (Astro.request.method === 'POST') {
   const eventDate = String(form.get('event_date') ?? '');
   const description = String(form.get('description') ?? '').trim();
   const location = String(form.get('location') ?? '').trim() || null;
+  const rating = parseRating(form.get('rating'));
 
   if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) {
     error = 'ต้องมีหัวข้อและวันที่';
@@ -31,13 +33,13 @@ if (Astro.request.method === 'POST') {
       if (id) {
         const old = db.prepare('SELECT image FROM event WHERE id = ?').get(id);
         db.prepare(
-          'UPDATE event SET title = ?, description = ?, event_date = ?, location = ?, image = COALESCE(?, image) WHERE id = ?',
-        ).run(title, description, eventDate, location, image, id);
+          'UPDATE event SET title = ?, description = ?, event_date = ?, location = ?, rating = ?, image = COALESCE(?, image) WHERE id = ?',
+        ).run(title, description, eventDate, location, rating, image, id);
         if (image) await removeImage(old?.image, UPLOAD_DIR);
       } else {
         db.prepare(
-          'INSERT INTO event (title, description, event_date, location, image) VALUES (?, ?, ?, ?, ?)',
-        ).run(title, description, eventDate, location, image);
+          'INSERT INTO event (title, description, event_date, location, rating, image) VALUES (?, ?, ?, ?, ?, ?)',
+        ).run(title, description, eventDate, location, rating, image);
       }
       return Astro.redirect('/admin', 303);
     } catch (e) {
@@ -116,6 +118,32 @@ const hatch =
           required
         />
       </label>
+
+      <fieldset class="grid gap-2 text-[12.5px] leading-[1.8]">
+        <legend class="mb-1">ให้ดาว</legend>
+        <div class="flex items-center gap-4">
+          <div class="stars">
+            {
+              [5, 4, 3, 2, 1].map((n) => (
+                <>
+                  <input
+                    type="radio"
+                    name="rating"
+                    id={`star-${n}`}
+                    value={n}
+                    checked={editing?.rating === n}
+                  />
+                  <label for={`star-${n}`}>{n} ดาว</label>
+                </>
+              ))
+            }
+          </div>
+          <label class="flex items-center gap-1.5 text-muted">
+            <input type="radio" name="rating" value="0" checked={!editing?.rating} />
+            ไม่ให้ดาว
+          </label>
+        </div>
+      </fieldset>
 
       <label class={label}>
         เล่าให้ฟัง

@@ -29,7 +29,8 @@ npm test                     # apps/web/test.mjs — assert ล้วน ไม�
 
 **DB คือ SQLite ผ่าน `node:sqlite`** (built-in ไม่ใช่ dependency) ไฟล์อยู่ `$DATA_DIR/our-lane.db`
 schema ถูกสร้างด้วย `CREATE TABLE IF NOT EXISTS` ตอน import `src/lib/db.js` — ไม่มี migration tool
-แก้ schema แล้วต้องเขียน `ALTER TABLE` เอง `node:sqlite` ต้องใช้ **Node ≥ 22.5** (จะขึ้น ExperimentalWarning ตอนบูต ปกติ)
+เพิ่มคอลัมน์ต้องเขียน `ALTER TABLE` เอง โดยเช็ค `PRAGMA table_info` ก่อนให้ idempotent
+(ดูคอลัมน์ `rating` เป็นตัวอย่าง) **อย่าใช้ try/catch ครอบเปล่า ๆ** จะกลืน error จริงที่ควรดัง `node:sqlite` ต้องใช้ **Node ≥ 22.5** (จะขึ้น ExperimentalWarning ตอนบูต ปกติ)
 
 **session คือ cookie ที่เซ็น HMAC** ไม่มีตาราง session — `sign()`/`unsign()` ใน `src/lib/auth.js`
 token เซ็นเวลาที่ออกไปด้วยและตรวจอายุ 30 วันฝั่ง server (cookie ที่หลุดจะหมดอายุเอง)

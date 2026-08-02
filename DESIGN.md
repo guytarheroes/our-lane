@@ -99,12 +99,14 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 
 | ฟอร์ม | fields |
 |---|---|
-| เพิ่ม/แก้ | `id` (hidden, เฉพาะตอนแก้) · `event_date` (`type="date"`) · `location` · `title` · `description` · `image` (`type="file"`) |
+| เพิ่ม/แก้ | `id` (hidden, เฉพาะตอนแก้) · `event_date` (`type="date"`) · `location` · `title` · `rating` · `description` · `image` (`type="file"`) |
 | ลบ | `intent=delete` · `id` |
 | ออกจากระบบ | `action="/logout"` method post |
 
 * ลิงก์แก้ไขคือ `/admin?edit=<id>` — หน้าเดียวกัน ฟอร์มเดียวกัน แค่ prefill
 * `input[name=image]` ต้องคง `accept="image/jpeg,image/png,image/webp,image/gif"`
+* `rating` เป็น radio 6 ตัว (`0`–`5`) — ดาวเรียง DOM กลับหลัง 5→1 แล้ว `row-reverse` ใน CSS
+  ถ้าเรียงใหม่เป็น 1→5 การระบายดาวด้วย `input:checked ~ label` จะพังทันที
 * ปุ่มลบมี `onsubmit="return confirm(...)"` — เก็บไว้ (ถ้า JS ปิด ก็แค่ลบเลย ยอมรับได้)
 
 **`/calendar`**
@@ -128,8 +130,9 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 * การ์ดแต่ละใบต้องมี class `reveal` ถึงจะเข้า IntersectionObserver
 * `<time datetime={e.event_date}>` เก็บ `datetime` ไว้
 
-ตัวแปรที่มีให้ใช้ต่อการ์ดหนึ่งใบ: `e.title` `e.description` `e.event_date` `e.location` `e.image`
-(`description` `location` `image` เป็น null ได้ — ต้องมี empty state ที่ไม่พัง)
+ตัวแปรที่มีให้ใช้ต่อการ์ดหนึ่งใบ: `e.title` `e.description` `e.event_date` `e.location` `e.image` `e.rating`
+(`description` `location` `image` `rating` เป็น null ได้ — ต้องมี empty state ที่ไม่พัง)
+`rating` เป็น 1–5 หรือ null เท่านั้น การ์ดแสดง `★★★☆☆` ส่วนช่องปฏิทินเล็กเกินไป จึงแสดง `★3` แทน
 
 ---
 

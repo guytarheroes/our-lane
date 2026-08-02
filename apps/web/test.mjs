@@ -6,6 +6,7 @@ import { MAX_BYTES, pickName, safeServe, sniff } from './src/lib/upload.js';
 import { reset, tooMany } from './src/lib/ratelimit.js';
 import { since, sinceThai } from './src/lib/since.js';
 import { monthGrid, shiftMonth, thisMonth, validMonth } from './src/lib/calendar.js';
+import { parseRating } from './src/lib/event.js';
 
 const stored = hash('correct horse battery');
 assert.ok(verify('correct horse battery', stored), 'รหัสผ่านที่ถูกต้องต้องผ่าน');
@@ -71,6 +72,18 @@ for (const iso of ['2023-01-11', '2024-01-31', '2024-02-29', '2023-12-31']) {
   assert.ok(years >= 0 && months >= 0 && days >= 0, `${iso} ต้องไม่ติดลบ`);
   assert.ok(months < 12 && days < 32, `${iso} ต้องไม่ล้นหน่วย`);
 }
+
+// ---- ดาว ----
+assert.equal(parseRating('4'), 4);
+assert.equal(parseRating(1), 1);
+assert.equal(parseRating(5), 5);
+assert.equal(parseRating('0'), null, 'ไม่ให้ดาว = null ไม่ใช่ 0');
+assert.equal(parseRating(null), null, 'ฟอร์มไม่ส่งมา');
+assert.equal(parseRating('ห้าดาว'), null, 'ไม่ใช่ตัวเลข');
+assert.equal(parseRating('9999'), null, 'เกิน 5 ต้องไม่หลุดลง DB ไปวาดดาวพันดวง');
+assert.equal(parseRating(-3), null, 'ติดลบ');
+assert.equal(parseRating('3.7'), 3, 'ทศนิยมต้องถูกตัด');
+assert.equal(parseRating(Infinity), null);
 
 // ---- ปฏิทิน ----
 assert.equal(validMonth('2026-07'), '2026-07');

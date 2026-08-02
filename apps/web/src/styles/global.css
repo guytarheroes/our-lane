@@ -68,6 +68,47 @@
   transform: none;
 }
 
+/* ดาวเป็น radio จริง ๆ — คลิก แท็บ และกดลูกศรได้ตามมาตรฐาน ไม่ต้องมี JS
+   เรียง DOM กลับหลัง (5→1) แล้ว row-reverse เพื่อให้ `input:checked ~ label`
+   ไล่ระบายดาวที่น้อยกว่าซึ่งอยู่ถัดไปใน DOM แต่อยู่ทางซ้ายบนจอ */
+.stars {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+}
+
+.stars input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+/* ข้อความในลาเบล ("3 ดาว") คือชื่อที่ screen reader อ่าน ส่วนดาวมาจาก ::before */
+.stars label {
+  cursor: pointer;
+  padding: 0 1px;
+  font-size: 0;
+  color: var(--line);
+}
+
+.stars label::before {
+  content: "★";
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.stars input:checked ~ label,
+.stars label:hover,
+.stars label:hover ~ label {
+  color: var(--accent);
+}
+
+.stars input:focus-visible + label {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
 @keyframes ml-pulse {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.35); opacity: 0.55; }
