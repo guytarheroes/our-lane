@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* palette: Old lace #fdf6ea · Gray #7c9cbe · Crimson red #8c0f06 · Barn red #560d07
-   เพิ่มสีใหม่ต้องแก้ 3 ที่: :root, บล็อก dark, และ @theme inline */
+   เพิ่มสีใหม่ต้องแก้ 2 ที่: :root และ @theme inline */
 :root {
   --bg: #fdf6ea;          /* Old lace */
   --surface: #fffcf6;
@@ -12,7 +12,8 @@
   --line: #e5d6c2;
   --accent: #8c0f06;      /* Crimson red — พื้นปุ่ม, จุด timeline */
   --accent-ink: #8c0f06;
-  --on-accent: #fdf6ea;   /* ตัวอักษรบนพื้น accent — คงที่ทั้ง 2 โหมด */
+  --on-accent: #fdf6ea;   /* ตัวอักษรบนพื้น accent */
+  --star-empty: #e6c4bf;  /* ดาวที่ยังไม่ได้เลือก */
   --alt: #7c9cbe;         /* Gray — สีรอง */
   --alt-bg: #e9f0f7;
   --alt-field: #f3f8fc;
@@ -39,6 +40,7 @@
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-on-accent: var(--on-accent);
+  --color-star-empty: var(--star-empty);
   --color-alt: var(--alt);
   --color-alt-bg: var(--alt-bg);
   --color-alt-field: var(--alt-field);
@@ -53,6 +55,23 @@
 :focus-visible {
   outline: 2px solid var(--accent-ink);
   outline-offset: 2px;
+}
+
+/* radio / checkbox / ปฏิทินใน <input type="date"> ของเบราว์เซอร์เป็นสีฟ้า default
+   บรรทัดเดียวนี้ทำให้ control ของ OS ทุกตัวใช้สีธีมแทน ไม่ต้องวาดเองสักอัน */
+:root {
+  accent-color: var(--accent);
+}
+
+/* กดค้างแล้วยุบนิดหนึ่ง ให้รู้ว่ากดโดน — บนมือถือที่ไม่มี hover อันนี้คือ feedback เดียวที่ได้ */
+button:active {
+  transform: scale(0.98);
+}
+
+input:hover:not(:disabled),
+textarea:hover,
+select:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
 }
 
 /* `.js` ถูกใส่ด้วย inline script ใน <head> ของ Base.astro
@@ -87,14 +106,17 @@
 /* ข้อความในลาเบล ("3 ดาว") คือชื่อที่ screen reader อ่าน ส่วนดาวมาจาก ::before */
 .stars label {
   cursor: pointer;
-  padding: 0 1px;
+  padding: 0 2px;
   font-size: 0;
-  color: var(--line);
+  /* ค่าคงที่ ไม่ใช้ color-mix เพราะ fallback ที่ compiler สร้างให้เป็นสีทึบ
+     เบราว์เซอร์เก่าจะเห็นดาวเปล่าเป็นแดงเต็มเหมือนติ๊ก 5 ดาวไว้ */
+  color: var(--star-empty);
+  transition: color 0.12s ease, transform 0.12s ease;
 }
 
 .stars label::before {
   content: "★";
-  font-size: 26px;
+  font-size: 28px;
   line-height: 1.2;
 }
 
@@ -102,6 +124,11 @@
 .stars label:hover,
 .stars label:hover ~ label {
   color: var(--accent);
+}
+
+.stars label:hover,
+.stars label:hover ~ label {
+  transform: scale(1.08);
 }
 
 .stars input:focus-visible + label {
@@ -124,6 +151,11 @@
     transition: none;
   }
   .pulse { animation: none; }
+  button:active,
+  .stars label:hover,
+  .stars label:hover ~ label {
+    transform: none;
+  }
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
