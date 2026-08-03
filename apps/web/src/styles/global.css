@@ -1,25 +1,34 @@
 @import "tailwindcss";
 
-/* palette: Old lace #fdf6ea · Gray #7c9cbe · Crimson red #8c0f06 · Barn red #560d07
+/* palette /168 — Soft Ivory #faf7ea · Light Blue #c5d9e2 · Soft Pink #e1aebc · Cherry Red #852936
    เพิ่มสีใหม่ต้องแก้ 2 ที่: :root และ @theme inline */
 :root {
-  --bg: #fdf6ea;          /* Old lace */
-  --surface: #fffcf6;
-  --field: #f6ecdc;
-  --text: #560d07;        /* Barn red — หัวข้อ */
-  --body: #4a3833;
-  --muted: #7d5c56;
-  --line: #e5d6c2;
-  --accent: #8c0f06;      /* Crimson red — พื้นปุ่ม, จุด timeline */
-  --accent-ink: #8c0f06;
-  --on-accent: #fdf6ea;   /* ตัวอักษรบนพื้น accent */
-  --star-empty: #e6c4bf;  /* ดาวที่ยังไม่ได้เลือก */
-  --alt: #7c9cbe;         /* Gray — สีรอง */
-  --alt-bg: #e9f0f7;
-  --alt-field: #f3f8fc;
-  --alt-line: #c6d7e6;
-  --alt-ink: #1e3348;
-  --alt-muted: #3d5f80;
+  --bg: #faf7ea;          /* Soft Ivory */
+  --surface: #fffdf6;
+  --field: #f2ecdb;
+  --text: #852936;        /* Cherry Red — หัวข้อ */
+  --body: #4a3d3f;
+  --muted: #77585f;
+  --line: #e7dcc9;
+  --accent: #852936;      /* Cherry Red — ปุ่ม, จุด timeline */
+  --accent-ink: #852936;
+  --on-accent: #faf7ea;   /* ตัวอักษรบนพื้น accent */
+  --star-empty: #e1aebc;  /* Soft Pink — ดาวที่ยังไม่ได้เลือก */
+
+  /* Soft Pink — การ์ดคำพูดบนไทม์ไลน์ (ความทรงจำที่ไม่มีรูปแต่มีเรื่องเล่า) */
+  --soft: #e1aebc;
+  --soft-bg: #f8e8ed;
+  --soft-line: #e1aebc;
+  --soft-ink: #55212b;
+  --soft-muted: #8a4152;
+
+  /* Light Blue — การ์ดรอง: ฟอร์มสมัคร, ช่องปฏิทินที่ไม่มีรูป, ป้าย no img */
+  --alt: #6d94a8;
+  --alt-bg: #e3edf2;
+  --alt-field: #f2f8fb;
+  --alt-line: #c5d9e2;
+  --alt-ink: #22404f;
+  --alt-muted: #416b83;
 }
 
 /* ไม่มี dark mode — palette นี้เป็นโทนสว่างล้วน พื้นหลังเป็น Old lace เสมอ
@@ -93,6 +102,11 @@
   --color-accent-ink: var(--accent-ink);
   --color-on-accent: var(--on-accent);
   --color-star-empty: var(--star-empty);
+  --color-soft: var(--soft);
+  --color-soft-bg: var(--soft-bg);
+  --color-soft-line: var(--soft-line);
+  --color-soft-ink: var(--soft-ink);
+  --color-soft-muted: var(--soft-muted);
   --color-alt: var(--alt);
   --color-alt-bg: var(--alt-bg);
   --color-alt-field: var(--alt-field);
