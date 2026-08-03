@@ -104,6 +104,10 @@ const DICT = {
     'err.futureStartDate': 'วันเริ่มนับอยู่ในอนาคตไม่ได้',
 
     'set.title': 'ตั้งค่า',
+    'set.groupAccount': 'บัญชี',
+    'set.groupAccountNote': 'มีผลกับบัญชีคุณคนเดียว อีกคนไม่เห็นและไม่โดนด้วย',
+    'set.groupSystem': 'ระบบ',
+    'set.groupSystemNote': 'ภาษากับธีมจำแค่ในเบราว์เซอร์นี้ · ค่าเว็บมีผลกับทั้งสองคน',
     'set.lang': 'ภาษา / Language',
     'set.theme': 'ธีม',
     'set.themeNote':
@@ -111,6 +115,7 @@ const DICT = {
     'set.themeNormal': 'ปกติ',
     'set.themeInvert': 'กลับสี',
     'set.account': 'บัญชี',
+    'set.profile': 'โปรไฟล์',
     'set.email': 'อีเมล',
     'set.emailFixed': 'เปลี่ยนไม่ได้',
     'set.name': 'ชื่อ',
@@ -250,6 +255,11 @@ const DICT = {
     'err.futureStartDate': 'The start date cannot be in the future',
 
     'set.title': 'Settings',
+    'set.groupAccount': 'Account',
+    'set.groupAccountNote': 'Yours alone — the other person neither sees nor feels these',
+    'set.groupSystem': 'System',
+    'set.groupSystemNote':
+      'Language and theme are remembered in this browser only · site settings affect both of you',
     'set.lang': 'ภาษา / Language',
     'set.theme': 'Theme',
     'set.themeNote':
@@ -257,6 +267,7 @@ const DICT = {
     'set.themeNormal': 'Normal',
     'set.themeInvert': 'Inverted',
     'set.account': 'Account',
+    'set.profile': 'Profile',
     'set.email': 'Email',
     'set.emailFixed': 'cannot be changed',
     'set.name': 'Name',

@@ -9,6 +9,7 @@ import { todayISO, validDate } from '../lib/calendar.js';
 import { generateCode, hashCode } from '../lib/recovery.js';
 import { THEME_COOKIE, THEME_COOKIE_OPTIONS, validTheme } from '../lib/theme.js';
 import { LANG_COOKIE, LANG_COOKIE_OPTIONS, dict, validLang } from '../lib/i18n.js';
+import { ICON, SVG_PROPS } from '../lib/icons.js';
 
 const me = Astro.locals.user;
 // อ่านภาษาก่อน POST — เปลี่ยนภาษาแล้ว redirect หน้าถัดไปจะได้ภาษาใหม่จาก cookie ที่เพิ่งเซ็ต
@@ -104,14 +105,9 @@ const site = siteSettings();
 const theme = validTheme(Astro.cookies.get(THEME_COOKIE)?.value);
 const lang = validLang(Astro.cookies.get(LANG_COOKIE)?.value);
 
-// ไอคอนวาดเอง ไม่ใช้ icon library ตามกฎห้ามเพิ่ม dependency — 24x24 stroke ตาม currentColor
 const themeOptions = [
   { value: 'normal', label: t('set.themeNormal'), icon: '<circle cx="12" cy="12" r="8.5"/>' },
-  {
-    value: 'invert',
-    label: t('set.themeInvert'),
-    icon: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/>',
-  },
+  { value: 'invert', label: t('set.themeInvert'), icon: ICON.contrast },
 ];
 const hasRecovery = Boolean(
   db.prepare('SELECT recovery FROM user WHERE id = ?').get(me.id)?.recovery,
@@ -123,7 +119,12 @@ const label = 'grid gap-1.5 text-[12.5px] leading-[1.8]';
 const input =
   'min-h-11 w-full rounded-[14px] border border-line bg-field px-3.5 py-2.5 text-[15px] leading-[1.6] text-text outline-none focus:border-accent';
 const submit = 'min-h-11 justify-self-start rounded-full bg-accent px-6 text-[14.5px] font-medium text-on-accent';
-const heading = 'font-display text-[17px] leading-[1.5] text-text';
+const heading = 'flex items-center gap-2 font-display text-[17px] leading-[1.5] text-text';
+const ico = 'size-[18px] flex-none text-accent-ink';
+// หัวข้อกลุ่มเป็น eyebrow แบบเดียวกับ stamp วันที่ในหน้าไทม์ไลน์ — จางกว่าหัวข้อการ์ดตั้งใจ
+// ให้มันอ่านเป็นเส้นแบ่ง ไม่ใช่หัวข้อที่แข่งกับชื่อการ์ด
+const railIco = 'size-4 flex-none text-muted';
+const rail = 'font-mono text-[11px] font-medium tracking-[0.12em] text-muted uppercase';
 ---
 
 <Base title={t('set.title')}>
@@ -147,158 +148,185 @@ const heading = 'font-display text-[17px] leading-[1.5] text-text';
       )
     }
 
-    <div class="grid gap-5">
-      <form method="post" class={card}>
-        <input type="hidden" name="intent" value="lang" />
-        <h2 class={heading}>{t('set.lang')}</h2>
-        <div class="flex gap-1.5 rounded-full border border-line bg-field p-1">
+    <section id="account" class="mt-7 scroll-mt-20 first:mt-0">
+      <div class="mb-3.5 flex items-center gap-2.5">
+        <svg {...SVG_PROPS} class={railIco} set:html={ICON.user} />
+        <h2 class={rail}>{t('set.groupAccount')}</h2>
+        <span class="h-px flex-1 bg-line"></span>
+      </div>
+      <p class="mb-3.5 text-[12px] leading-[1.7] text-muted">{t('set.groupAccountNote')}</p>
+
+      <div class="grid gap-4">
+        <form method="post" class={card}>
+          <input type="hidden" name="intent" value="profile" />
+          <h3 class={heading}>
+            <svg {...SVG_PROPS} class={ico} set:html={ICON.user} />{t('set.profile')}</h3>
+          <p class="text-[12.5px] text-muted">
+            {t('set.email')} <span class="font-mono text-body">{me?.email}</span> — {t('set.emailFixed')}
+          </p>
+          <label class={label}>
+            {t('set.name')} <span class="text-muted">{t('set.nameNote')}</span>
+            <input class={input} type="text" name="name" value={me?.name ?? ''} maxlength="60" />
+          </label>
+          <button class={submit}>{t('set.saveName')}</button>
+        </form>
+
+        <form method="post" class={card}>
+          <input type="hidden" name="intent" value="password" />
+          <h3 class={heading}>
+            <svg {...SVG_PROPS} class={ico} set:html={ICON.lock} />{t('set.password')}</h3>
+          <p class="text-[12.5px] leading-[1.8] text-muted">
+            {t('set.passwordNote')}
+          </p>
+          <label class={label}>
+            {t('set.current')}
+            <input class={input} type="password" name="current" autocomplete="current-password" required />
+          </label>
+          <label class={label}>
+            {t('set.next')} <span class="text-muted">{t('set.minLen')}</span>
+            <input
+              class={input}
+              type="password"
+              name="next"
+              minlength="8"
+              autocomplete="new-password"
+              required
+            />
+          </label>
+          <label class={label}>
+            {t('set.confirm')}
+            <input
+              class={input}
+              type="password"
+              name="confirm"
+              minlength="8"
+              autocomplete="new-password"
+              required
+            />
+          </label>
+          <button class={submit}>{t('set.password')}</button>
+        </form>
+
+        <form method="post" class={card}>
+          <input type="hidden" name="intent" value="recovery" />
+          <h3 class={heading}>
+            <svg {...SVG_PROPS} class={ico} set:html={ICON.key} />{t('set.recovery')}</h3>
           {
-            [
-              { value: 'th', label: 'ไทย' },
-              { value: 'en', label: 'English' },
-            ].map((opt) => (
-              <button
-                name="lang"
-                value={opt.value}
-                aria-current={lang === opt.value ? 'true' : undefined}
-                class:list={[
-                  'min-h-9 flex-1 rounded-full text-[13px] font-medium',
-                  lang === opt.value ? 'bg-accent text-on-accent' : 'text-muted hover:bg-surface',
-                ]}
-              >
-                {opt.label}
-              </button>
-            ))
-          }
-        </div>
-      </form>
-
-      <form method="post" class={card}>
-        <input type="hidden" name="intent" value="theme" />
-        <h2 class={heading}>{t('set.theme')}</h2>
-        <p class="text-[12.5px] leading-[1.8] text-muted">{t('set.themeNote')}</p>
-        {/* ปุ่มแต่ละอันส่งค่าของตัวเองผ่าน name/value ของ <button> กดทีเดียวจบ
-            ไม่ต้องมีปุ่มบันทึกแยก และไม่ต้องใช้ JS สักบรรทัด */}
-        <div class="flex gap-1.5 rounded-full border border-line bg-field p-1">
-          {
-            themeOptions.map((opt) => (
-              <button
-                name="theme"
-                value={opt.value}
-                aria-current={theme === opt.value ? 'true' : undefined}
-                class:list={[
-                  'flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-full text-[13px] font-medium',
-                  theme === opt.value ? 'bg-accent text-on-accent' : 'text-muted hover:bg-surface',
-                ]}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  class="size-4 flex-none"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.75"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                  set:html={opt.icon}
-                />
-                {opt.label}
-              </button>
-            ))
-          }
-        </div>
-      </form>
-
-      <form method="post" class={card}>
-        <input type="hidden" name="intent" value="profile" />
-        <h2 class={heading}>{t('set.account')}</h2>
-        <p class="text-[12.5px] text-muted">
-          {t('set.email')} <span class="font-mono text-body">{me?.email}</span> — {t('set.emailFixed')}
-        </p>
-        <label class={label}>
-          {t('set.name')} <span class="text-muted">{t('set.nameNote')}</span>
-          <input class={input} type="text" name="name" value={me?.name ?? ''} maxlength="60" />
-        </label>
-        <button class={submit}>{t('set.saveName')}</button>
-      </form>
-
-      <form method="post" class={card}>
-        <input type="hidden" name="intent" value="password" />
-        <h2 class={heading}>{t('set.password')}</h2>
-        <p class="text-[12.5px] leading-[1.8] text-muted">
-          {t('set.passwordNote')}
-        </p>
-        <label class={label}>
-          {t('set.current')}
-          <input class={input} type="password" name="current" autocomplete="current-password" required />
-        </label>
-        <label class={label}>
-          {t('set.next')} <span class="text-muted">{t('set.minLen')}</span>
-          <input
-            class={input}
-            type="password"
-            name="next"
-            minlength="8"
-            autocomplete="new-password"
-            required
-          />
-        </label>
-        <label class={label}>
-          {t('set.confirm')}
-          <input
-            class={input}
-            type="password"
-            name="confirm"
-            minlength="8"
-            autocomplete="new-password"
-            required
-          />
-        </label>
-        <button class={submit}>{t('set.password')}</button>
-      </form>
-
-      <form method="post" class={card}>
-        <input type="hidden" name="intent" value="recovery" />
-        <h2 class={heading}>{t('set.recovery')}</h2>
-        {
-          freshCode ? (
-            <>
-              <p class="text-[12.5px] leading-[1.8] text-accent-ink">
-                {t('set.recoveryFresh')}
+            freshCode ? (
+              <>
+                <p class="text-[12.5px] leading-[1.8] text-accent-ink">
+                  {t('set.recoveryFresh')}
+                </p>
+                <p class="rounded-2xl border border-accent-ink/35 bg-accent/10 px-4 py-4 text-center font-mono text-[18px] tracking-[0.12em] text-accent-ink select-all">
+                  {freshCode}
+                </p>
+              </>
+            ) : (
+              <p class="text-[12.5px] leading-[1.8] text-muted">
+                {hasRecovery ? t('set.recoveryHas') : t('set.recoveryNone')}
               </p>
-              <p class="rounded-2xl border border-accent-ink/35 bg-accent/10 px-4 py-4 text-center font-mono text-[18px] tracking-[0.12em] text-accent-ink select-all">
-                {freshCode}
-              </p>
-            </>
-          ) : (
-            <p class="text-[12.5px] leading-[1.8] text-muted">
-              {hasRecovery ? t('set.recoveryHas') : t('set.recoveryNone')}
-            </p>
-          )
-        }
-        <button class={submit}>{hasRecovery || freshCode ? t('set.recoveryNew') : t('set.recoveryCreate')}</button>
-      </form>
+            )
+          }
+          <button class={submit}>{hasRecovery || freshCode ? t('set.recoveryNew') : t('set.recoveryCreate')}</button>
+        </form>
+      </div>
+    </section>
 
-      <form method="post" class={card}>
-        <input type="hidden" name="intent" value="site" />
-        <h2 class={heading}>{t('set.site')}</h2>
-        <label class={label}>
-          {t('set.siteName')}
-          <input
-            class={input}
-            type="text"
-            name="couple_name"
-            value={site.coupleName}
-            maxlength="80"
-            required
-          />
-        </label>
-        <label class={label}>
-          {t('set.startDate')} <span class="text-muted">{t('set.startDateNote')}</span>
-          <input class={input} type="date" name="start_date" value={site.startDate} required />
-        </label>
-        <button class={submit}>{t('set.saveSite')}</button>
-      </form>
-    </div>
+    <section id="system" class="mt-7 scroll-mt-20 first:mt-0">
+      <div class="mb-3.5 flex items-center gap-2.5">
+        <svg {...SVG_PROPS} class={railIco} set:html={ICON.gear} />
+        <h2 class={rail}>{t('set.groupSystem')}</h2>
+        <span class="h-px flex-1 bg-line"></span>
+      </div>
+      <p class="mb-3.5 text-[12px] leading-[1.7] text-muted">{t('set.groupSystemNote')}</p>
+
+      <div class="grid gap-4">
+        <form method="post" class={card}>
+          <input type="hidden" name="intent" value="lang" />
+          <h3 class={heading}>
+            <svg {...SVG_PROPS} class={ico} set:html={ICON.globe} />{t('set.lang')}</h3>
+          <div class="flex gap-1.5 rounded-full border border-line bg-field p-1">
+            {
+              [
+                { value: 'th', label: 'ไทย' },
+                { value: 'en', label: 'English' },
+              ].map((opt) => (
+                <button
+                  name="lang"
+                  value={opt.value}
+                  aria-current={lang === opt.value ? 'true' : undefined}
+                  class:list={[
+                    'min-h-9 flex-1 rounded-full text-[13px] font-medium',
+                    lang === opt.value ? 'bg-accent text-on-accent' : 'text-muted hover:bg-surface',
+                  ]}
+                >
+                  {opt.label}
+                </button>
+              ))
+            }
+          </div>
+        </form>
+
+        <form method="post" class={card}>
+          <input type="hidden" name="intent" value="theme" />
+          <h3 class={heading}>
+            <svg {...SVG_PROPS} class={ico} set:html={ICON.contrast} />{t('set.theme')}</h3>
+          <p class="text-[12.5px] leading-[1.8] text-muted">{t('set.themeNote')}</p>
+          {/* ปุ่มแต่ละอันส่งค่าของตัวเองผ่าน name/value ของ <button> กดทีเดียวจบ
+              ไม่ต้องมีปุ่มบันทึกแยก และไม่ต้องใช้ JS สักบรรทัด */}
+          <div class="flex gap-1.5 rounded-full border border-line bg-field p-1">
+            {
+              themeOptions.map((opt) => (
+                <button
+                  name="theme"
+                  value={opt.value}
+                  aria-current={theme === opt.value ? 'true' : undefined}
+                  class:list={[
+                    'flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-full text-[13px] font-medium',
+                    theme === opt.value ? 'bg-accent text-on-accent' : 'text-muted hover:bg-surface',
+                  ]}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="size-4 flex-none"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                    set:html={opt.icon}
+                  />
+                  {opt.label}
+                </button>
+              ))
+            }
+          </div>
+        </form>
+
+        <form method="post" class={card}>
+          <input type="hidden" name="intent" value="site" />
+          <h3 class={heading}>
+            <svg {...SVG_PROPS} class={ico} set:html={ICON.sliders} />{t('set.site')}</h3>
+          <label class={label}>
+            {t('set.siteName')}
+            <input
+              class={input}
+              type="text"
+              name="couple_name"
+              value={site.coupleName}
+              maxlength="80"
+              required
+            />
+          </label>
+          <label class={label}>
+            {t('set.startDate')} <span class="text-muted">{t('set.startDateNote')}</span>
+            <input class={input} type="date" name="start_date" value={site.startDate} required />
+          </label>
+          <button class={submit}>{t('set.saveSite')}</button>
+        </form>
+      </div>
+    </section>
+
   </main>
 </Base>

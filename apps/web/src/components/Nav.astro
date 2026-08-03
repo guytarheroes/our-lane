@@ -1,5 +1,6 @@
 ---
 import { LANG_COOKIE, dict, validLang } from '../lib/i18n.js';
+import { ICON, SVG_PROPS } from '../lib/icons.js';
 
 interface Props {
   current: 'timeline' | 'calendar' | 'admin' | 'settings';
@@ -12,7 +13,9 @@ const user = Astro.locals.user;
 const pill = 'inline-flex min-h-9 flex-none items-center rounded-full px-3.5 text-[13px] font-medium sm:px-4';
 const on = `${pill} bg-accent text-on-accent`;
 const off = `${pill} border border-line text-muted`;
-const item = 'block rounded-xl px-3 py-2 text-[13.5px]';
+const item = 'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13.5px]';
+const itemIco = 'size-4 flex-none opacity-70';
+const divide = 'my-1 block h-px bg-line';
 
 // ชื่อย่อบน avatar — ไม่มีชื่อก็เอาตัวแรกของอีเมล ไม่มีอะไรเลยก็ขีดกลาง
 const initial = (user?.name?.trim() || user?.email || '—').trim().charAt(0).toUpperCase();
@@ -65,22 +68,45 @@ const initial = (user?.name?.trim() || user?.email || '—').trim().charAt(0).to
           <span class="block truncate font-mono text-[11px] text-muted">{user?.email}</span>
         </p>
 
+        <span class={divide}></span>
+
+        {/* ของที่เป็น "เนื้อหา" อยู่กลุ่มบน */}
         <a
           href="/admin#list"
           class:list={[item, current === 'admin' ? 'bg-accent text-on-accent' : 'text-body hover:bg-field']}
         >
+          <svg {...SVG_PROPS} class={itemIco} set:html={ICON.list} />
           {t('nav.myList')}
         </a>
+
+        <span class={divide}></span>
+
+        {/* ตั้งค่าแยกเป็น 2 ทาง เพราะบัญชีกับค่าระบบเป็นคนละเรื่องกัน
+            ลิงก์ตรงไปที่กลุ่มนั้นในหน้า /settings เลย ไม่ต้องลงไปหาเอง */}
         <a
-          href="/settings"
+          href="/settings#account"
           aria-current={current === 'settings' ? 'page' : undefined}
-          class:list={[item, current === 'settings' ? 'bg-accent text-on-accent' : 'text-body hover:bg-field']}
+          class={`${item} text-body hover:bg-field`}
         >
-          {t('nav.settings')}
+          <svg {...SVG_PROPS} class={itemIco} set:html={ICON.user} />
+          {t('set.groupAccount')}
+        </a>
+        <a
+          href="/settings#system"
+          aria-current={current === 'settings' ? 'page' : undefined}
+          class={`${item} text-body hover:bg-field`}
+        >
+          <svg {...SVG_PROPS} class={itemIco} set:html={ICON.gear} />
+          {t('set.groupSystem')}
         </a>
 
+        <span class={divide}></span>
+
         <form method="post" action="/logout">
-          <button class={`${item} w-full text-left text-accent-ink hover:bg-field`}>{t('nav.logout')}</button>
+          <button class={`${item} text-accent-ink hover:bg-field`}>
+            <svg {...SVG_PROPS} class={itemIco} set:html={ICON.logout} />
+            {t('nav.logout')}
+          </button>
         </form>
       </div>
     </details>
