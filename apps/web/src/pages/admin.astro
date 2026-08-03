@@ -2,8 +2,9 @@
 import Base from '../layouts/Base.astro';
 import { db, UPLOAD_DIR } from '../lib/db.js';
 import { removeImage, saveImage } from '../lib/upload.js';
+import { removeThumbs } from '../lib/thumb.js';
 import { parseRating } from '../lib/event.js';
-import { validDate } from '../lib/calendar.js';
+import { todayISO, validDate } from '../lib/calendar.js';
 import Nav from '../components/Nav.astro';
 
 let error = '';
@@ -17,6 +18,7 @@ if (Astro.request.method === 'POST') {
     if (old) {
       db.prepare('DELETE FROM event WHERE id = ?').run(id);
       await removeImage(old.image, UPLOAD_DIR);
+      await removeThumbs(old.image);
     }
     return Astro.redirect('/admin', 303);
   }
@@ -37,7 +39,10 @@ if (Astro.request.method === 'POST') {
         db.prepare(
           'UPDATE event SET title = ?, description = ?, event_date = ?, location = ?, rating = ?, image = COALESCE(?, image) WHERE id = ?',
         ).run(title, description, eventDate, location, rating, image, id);
-        if (image) await removeImage(old?.image, UPLOAD_DIR);
+        if (image) {
+          await removeImage(old?.image, UPLOAD_DIR);
+          await removeThumbs(old?.image);
+        }
       } else {
         db.prepare(
           'INSERT INTO event (title, description, event_date, location, rating, image) VALUES (?, ?, ?, ?, ?, ?)',
@@ -89,7 +94,15 @@ const hatch =
       <div class="grid gap-3.5 sm:grid-cols-[180px_1fr]">
         <label class={label}>
           วันที่
-          <input class={input} type="date" name="event_date" value={editing?.event_date} required />
+          {/* iOS แสดงวันนี้ในช่องว่างจนดูเหมือนกรอกแล้ว แต่ value ยังว่าง กดบันทึกจะโดน error งง ๆ
+            ใส่วันนี้เป็นค่าตั้งต้นไปเลย ตรงกับที่ตาเห็นและเป็นค่าที่ใช้บ่อยที่สุดอยู่แล้ว */}
+        <input
+          class={input}
+          type="date"
+          name="event_date"
+          value={editing?.event_date ?? todayISO()}
+          required
+        />
         </label>
         <label class={label}>
           สถานที่
@@ -161,9 +174,12 @@ const hatch =
           {
             editing?.image ? (
               <img
-                src={`/uploads/${editing.image}`}
+                src={`/uploads/${editing.image}?s=sm`}
                 alt=""
-                class="size-14 flex-none rounded-xl object-cover sm:h-[62px] sm:w-[82px]"
+                loading="lazy"
+                decoding="async"
+                onload="this.classList.remove('skeleton')"
+                class="skeleton size-14 flex-none rounded-xl object-cover sm:h-[62px] sm:w-[82px]"
               />
             ) : (
               <span class={`block size-11 flex-none rounded-xl ${hatch}`} />
@@ -210,10 +226,12 @@ const hatch =
               >
                 {e.image ? (
                   <img
-                    src={`/uploads/${e.image}`}
+                    src={`/uploads/${e.image}?s=sm`}
                     alt=""
                     loading="lazy"
-                    class="size-12 flex-none rounded-xl object-cover"
+                    decoding="async"
+                    onload="this.classList.remove('skeleton')"
+                    class="skeleton size-12 flex-none rounded-xl object-cover"
                   />
                 ) : (
                   <span class="flex size-12 flex-none items-center justify-center rounded-xl bg-alt/25 font-mono text-[9.5px] text-alt-muted">

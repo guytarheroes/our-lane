@@ -102,11 +102,12 @@ const heading = 'font-display text-pretty';
                     ]}
                   >
                     <img
-                      src={`/uploads/${e.image}`}
+                      src={`/uploads/${e.image}?s=md`}
                       alt={e.title}
                       loading="lazy"
                       decoding="async"
-                      class="aspect-[4/3] w-full object-cover"
+                      onload="this.classList.remove('skeleton')"
+                      class="skeleton aspect-[4/3] w-full object-cover"
                     />
                     <div class="px-5 pt-[18px] pb-[22px] sm:px-7 sm:pt-[26px] sm:pb-[30px]">
                       <time datetime={e.event_date} class={`${stamp} block text-muted`}>

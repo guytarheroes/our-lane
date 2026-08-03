@@ -300,11 +300,12 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
                     >
                       {first.image && (
                         <img
-                          src={`/uploads/${first.image}`}
+                          src={`/uploads/${first.image}?s=sm`}
                           alt=""
                           loading="lazy"
                           decoding="async"
-                          class="size-full object-cover"
+                          onload="this.classList.remove('skeleton')"
+                          class="skeleton size-full object-cover"
                         />
                       )}
                       <span

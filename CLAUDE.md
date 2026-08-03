@@ -108,7 +108,8 @@ runner ต่อขาออกไปหา GitHub เอง วิธีนี�
 
 ## Conventions
 
-**ไม่เพิ่ม dependency ถ้าไม่จำเป็นจริง** ตอนนี้ทั้งเว็บมี 4 ตัวคือ astro, @astrojs/node, tailwindcss, @tailwindcss/vite
+**ไม่เพิ่ม dependency ถ้าไม่จำเป็นจริง** ตอนนี้ทั้งเว็บมี 5 ตัวคือ astro, @astrojs/node, tailwindcss, @tailwindcss/vite, sharp
+(sharp ติดมากับ astro อยู่แล้ว แต่ประกาศตรง ๆ เพราะ `lib/thumb.js` import เอง ไม่ควรพึ่ง transitive)
 auth/DB/upload ใช้ `node:crypto`, `node:sqlite`, `node:fs` ล้วน — ไม่มี Prisma, ไม่มี NextAuth, ไม่มี bcrypt
 DatePicker คือ `<input type="date">` และ animation ทั้งหมดเป็น CSS + IntersectionObserver ไม่มี animation library
 
@@ -127,6 +128,16 @@ JS แค่มาเติมชั่วโมง/นาที/วินาท
 **อย่าใส่ `will-change` ค้างไว้** เคยทำแล้วมันดันทุก element ขึ้น compositor layer ถาวร
 
 ## Gotchas
+
+**รูปต้องเรียกผ่าน `?s=sm` หรือ `?s=md` เสมอ ห้ามใส่ `src` เปล่า ๆ**
+ต้นฉบับจากกล้องมือถือคือ 3–8MB ปฏิทินเดือนหนึ่งมีได้ 31 ช่อง = หลายสิบ MB ต่อการเปิดหนึ่งครั้ง
+Safari บนมือถือมีเพดานหน่วยความจำสำหรับ decode รูป เกินแล้วจะเรนเดอร์เพี้ยนหรือว่างเปล่า
+(เคยเจอบน production มาแล้ว เดสก์ท็อปไม่เจอเพราะแรมเยอะเน็ตเร็ว)
+
+`lib/thumb.js` ย่อด้วย sharp ตอนถูกขอครั้งแรกแล้ว cache ลง `$DATA_DIR/uploads/.cache`
+รูปเก่าที่อัปไว้ก่อนหน้าจึงใช้ได้เลยไม่ต้อง backfill · ลบ event ต้องเรียก `removeThumbs` ด้วย
+**ถ้า sharp โหลดไม่ขึ้น (prebuilt ของ musl/arm64 หาย) route จะตกไปเสิร์ฟต้นฉบับแทน** ช้าแต่ไม่พัง
+— ตรวจบน Pi ด้วย `docker exec our-lane-web node -e "require('sharp');console.log('ok')"`
 
 **รูปที่ user อัปโหลดใช้ `<Image>` ของ `astro:assets` ไม่ได้** เพราะ astro:assets ประมวลผลตอน build
 แต่รูปพวกนี้มาถึงหลัง build — จึงเป็น `<img loading="lazy" decoding="async">` ธรรมดาที่ชี้ไป `/uploads/[file]`
