@@ -80,11 +80,11 @@
   --alt-muted: #852936b8;
   color: var(--body);
 
-  background-color: var(--alt-bg);
+  background-color: #faf7ea;
   background-image: repeating-linear-gradient(
     90deg,
-    #faf7ea 0 14px,
-    transparent 14px 34px
+    #c5d9e28c 0 20px,
+    transparent 20px 68px
   );
 }
 

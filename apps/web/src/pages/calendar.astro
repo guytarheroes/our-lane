@@ -36,7 +36,6 @@ for (const e of events) {
 }
 
 const count = events.length;
-const photos = events.filter((e) => e.image).length;
 const maxMonthly = Number(peak?.peak ?? 0);
 
 const prev = shiftMonth(month, -1);
@@ -212,7 +211,7 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
       }
     </div>
 
-    <div class="mt-8 flex items-center justify-center gap-5 sm:gap-8">
+    <div class="mt-8 flex justify-center">
       <div class="relative size-[136px] sm:size-[164px]">
         <svg viewBox="0 0 120 120" class="size-full -rotate-90" aria-hidden="true">
           <circle cx="60" cy="60" r="54" fill="none" stroke="var(--line)" stroke-width="7" />
@@ -228,20 +227,6 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
         </div>
       </div>
 
-      <div class="relative size-[104px] sm:size-[124px]">
-        <svg viewBox="0 0 120 120" class="size-full -rotate-90" aria-hidden="true">
-          <circle cx="60" cy="60" r="54" fill="none" stroke="var(--line)" stroke-width="8" />
-          <circle
-            cx="60" cy="60" r="54" fill="none"
-            stroke="var(--alt)" stroke-width="8" stroke-linecap="round"
-            stroke-dasharray={`${ring(photos, count) * C} ${C}`}
-          />
-        </svg>
-        <div class="absolute inset-0 flex flex-col items-center justify-center">
-          <span class="font-display text-[26px] leading-none text-text sm:text-[30px]">{photos}</span>
-          <span class="mt-1 text-[11.5px] text-muted">รูป</span>
-        </div>
-      </div>
     </div>
 
     {/* ปฏิทินคือข้อมูลตาราง — <table> ทำให้ screen reader อ่านหัวคอลัมน์ได้เองโดยไม่ต้องใส่ ARIA */}
