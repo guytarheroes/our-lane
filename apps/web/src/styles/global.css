@@ -104,6 +104,11 @@
   --font-body: "Bai Jamjuree", "Noto Sans Thai", "Leelawadee UI", system-ui, sans-serif;
 }
 
+/* navbar สูง 56px และ fixed อยู่ — ทุก anchor ต้องหยุดต่ำกว่านั้น ไม่งั้นหัวข้อมุดใต้แถบ */
+html {
+  scroll-padding-top: 4.5rem;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent-ink);
   outline-offset: 2px;

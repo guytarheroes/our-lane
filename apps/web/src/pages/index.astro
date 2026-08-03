@@ -29,15 +29,11 @@ const heading = 'font-display text-pretty';
 ---
 
 <Base title={coupleName}>
+  <Nav current="timeline" />
+
   <header class="border-b border-line">
     <div class={`${wrap} pt-11 pb-9 sm:grid sm:grid-cols-[1fr_auto] sm:items-end sm:gap-10 sm:pt-[76px] sm:pb-[60px]`}>
       <div>
-        <p class="mb-3.5 flex items-center gap-2.5 sm:mb-[18px]">
-          <span class="pulse block size-2 rounded-full bg-accent sm:size-[9px]"></span>
-          <span class="font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-muted sm:text-[11.5px]">
-            our memory lane
-          </span>
-        </p>
         <h1 class={`${heading} max-w-[15ch] text-[34px] leading-[1.4] text-text sm:text-[58px] sm:leading-[1.35]`}>
           {coupleName}
         </h1>
@@ -68,7 +64,6 @@ const heading = 'font-display text-pretty';
   </header>
 
   <main class={`${wrap} pt-8 pb-14 sm:pt-12 sm:pb-10`}>
-    <div class="mb-8 sm:mb-12"><Nav current="timeline" /></div>
 
     {
       events.length === 0 ? (
@@ -95,7 +90,7 @@ const heading = 'font-display text-pretty';
               /* min-w-0 ทุกใบ = กัน grid item ขยายตาม min-content แล้วดันจอ 375px ให้เลื่อนแนวนอน */
               <li
                 id={`e${e.id}`}
-                class="reveal relative min-w-0 scroll-mt-8 sm:grid sm:grid-cols-2 sm:gap-x-[72px]"
+                class="reveal relative min-w-0 sm:grid sm:grid-cols-2 sm:gap-x-[72px]"
               >
                 <span class="absolute top-6 -left-[23px] block size-3 rounded-full bg-accent ring-[3px] ring-bg sm:top-[26px] sm:left-1/2 sm:size-[13px] sm:-translate-x-1/2" />
 
@@ -209,14 +204,8 @@ const heading = 'font-display text-pretty';
   </main>
 
   <footer class="border-t border-line">
-    <div class={`${wrap} flex items-center justify-between gap-5 py-8 sm:py-10`}>
+    <div class={`${wrap} py-8 sm:py-10`}>
       <span class="text-[13px] text-muted">ยังเขียนต่ออยู่</span>
-      <a
-        href="/admin"
-        class="inline-flex min-h-11 items-center rounded-full border border-accent-ink/35 px-5 text-[13.5px] font-medium text-accent-ink"
-      >
-        เพิ่มความทรงจำ
-      </a>
     </div>
   </footer>
 

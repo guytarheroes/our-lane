@@ -175,9 +175,15 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 ฟอนต์: **Bai Jamjuree** ทั้ง `--font-display` (หัวข้อ น้ำหนัก 600) และ `--font-body` (เนื้อความ 400)
 ไฟล์อยู่ `public/fonts/` เสิร์ฟจาก origin เอง ไม่มี request ออกนอกเลย
 
-* nav แถวบนของ `/` และ `/calendar` มี 3 ปุ่ม: ไทม์ไลน์ · ปฏิทิน · ＋ เพิ่ม (ชิดขวา)
-  **ไม่ใช้ floating action button** — จะลอยทับรูปความทรงจำตลอดเวลา ขัดกับโทนสมุดภาพ
-  และ nav มีอยู่แล้ว ไม่ต้องมี element ลอยตัวใหม่ที่ต้องดูแล z-index กับ safe-area
+* `<Nav>` เป็นแถบ **`fixed top-0` สูง 56px** ครอบทุกหน้าที่ล็อกอินแล้ว
+  `[● wordmark] [ไทม์ไลน์] [ปฏิทิน] … [＋] [avatar]` — wordmark ซ่อนต่ำกว่า `sm`
+  ไม่งั้นแถวเดียวใส่ไม่พอที่ 320px
+  * คอมโพเนนต์ปล่อย spacer `h-14` ออกมาเอง หน้าอื่นไม่ต้องเผื่อ padding บน
+  * `html { scroll-padding-top: 4.5rem }` ใน `global.css` ทำให้ anchor ทุกอันหยุดใต้แถบ
+    **อย่าใส่ `scroll-mt` ที่ element เองอีก** จะบวกกันกลายเป็นเว้นเยอะเกิน
+  * เมนูบัญชี (`<details>`) มี: ชื่อ/อีเมล · รายการของฉัน (`/admin#list`) · ตั้งค่า · ออกจากระบบ
+* **ไม่ใช้ floating action button** — จะลอยทับรูปความทรงจำตลอดเวลา ขัดกับโทนสมุดภาพ
+  ปุ่ม ＋ อยู่ในแถบ fixed ซึ่งเห็นตลอดอยู่แล้ว
 * `.pulse` — จุดเต้น 2.4s (`ml-pulse`) บน eyebrow และใน empty state
 * `.js .reveal` / `.js .reveal.in` — fade + เลื่อนขึ้น 24px
 * layout: `max-w-5xl` หน้า `/`, `max-w-2xl` หน้า `/admin`, `max-w-3xl` หน้า `/login`

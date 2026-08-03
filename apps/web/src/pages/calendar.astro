@@ -103,15 +103,9 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
 ---
 
 <Base title={`ปฏิทิน · ${coupleName}`}>
-  <header class={`${wrap} pt-11 pb-6 sm:pt-16`}>
-    <p class="mb-4 flex items-center gap-2.5">
-      <span class="pulse block size-2 rounded-full bg-accent"></span>
-      <span class="font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-muted">
-        our memory lane
-      </span>
-    </p>
+  <Nav current="calendar" />
 
-    <Nav current="calendar" />
+  <header class={`${wrap} pt-8 pb-6 sm:pt-12`}>
   </header>
 
   <main class={`${wrap} pb-16`}>
