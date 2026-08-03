@@ -126,10 +126,11 @@ DatePicker คือ `<input type="date">` และ animation ทั้งห�
 **Tailwind v4 ไม่มี `tailwind.config.js`** ต่อผ่าน `@tailwindcss/vite` ใน `astro.config.mjs`
 สีทั้งหมดประกาศเป็น CSS variable บน `:root` แล้ว map เข้า utility ด้วย `@theme inline`
 ใน `src/styles/global.css` — เพิ่มสีใหม่ต้องแก้ **2 ที่**: `:root` และ `@theme inline`
-**ธีมเลือกได้ 3 แบบ** (ตามเครื่อง / สว่าง / มืด) ที่ `/settings` — เก็บใน cookie แล้ว
+**ธีมเลือกได้ 2 แบบ** (ปกติ / กลับสี) ที่ `/settings` — เก็บใน cookie แล้ว
 `Base.astro` render `data-theme` ตั้งแต่ฝั่ง server **ไม่มีจอกระพริบตอนโหลด**
 และไม่ต้องใช้ JS เลย ห้ามเปลี่ยนไปอ่าน localStorage ด้วย JS เพราะจะได้ FOUC กลับมา
-ห้ามใช้ `dark:` prefix — สีมาจาก token ที่สลับค่าเอง
+**ทั้งเว็บใช้ได้แค่ 4 สีจาก palette** และมีแค่ 3 คู่ที่ contrast ผ่าน ทุกคู่ต้องมี Cherry Red
+รายละเอียดอยู่ใน DESIGN.md — ห้ามสร้างเฉดใหม่ ระดับความเข้มใช้ alpha ของสีเดิมเท่านั้น
 
 **เว็บต้องอ่านได้เมื่อ JS ไม่ทำงาน** `.reveal` เริ่มที่ `opacity: 0` แต่ selector คือ `.js .reveal`
 โดย class `js` ถูกใส่ด้วย inline script ใน `<head>` ของ `Base.astro` — ถ้าลบ gate นี้ทิ้ง

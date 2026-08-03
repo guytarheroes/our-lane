@@ -1,7 +1,6 @@
 ---
 import '../styles/global.css';
 import { THEME_COOKIE, validTheme } from '../lib/theme.js';
-import { accentColors } from '../lib/settings.js';
 
 interface Props {
   title?: string;
@@ -11,38 +10,19 @@ const { title = 'Our Memory Lane' } = Astro.props;
 
 // อ่านจาก cookie แล้ว render ไปเลยตั้งแต่ฝั่ง server — ไม่มีจอกระพริบตอนโหลด
 // แบบที่ theme switcher ซึ่งอ่าน localStorage ด้วย JS มักเป็น
-// 'system' = ไม่ใส่ attribute ปล่อยให้ prefers-color-scheme ใน CSS ทำงานเอง
 const theme = validTheme(Astro.cookies.get(THEME_COOKIE)?.value);
-const accent = accentColors();
 ---
 
 <!doctype html>
-<html lang="th" data-theme={theme === 'system' ? undefined : theme}>
+<html lang="th" data-theme={theme === 'invert' ? 'invert' : undefined}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
-    <meta name="theme-color" content={theme === 'dark' ? '#1a1114' : '#faf7ea'} />
+    <meta name="theme-color" content={theme === 'invert' ? '#852936' : '#faf7ea'} />
     {/* บอกเบราว์เซอร์ว่าหน้านี้รองรับโทนไหน — native control (ปฏิทินใน input date, scrollbar)
         จะได้เลือกสีให้ตรงกับที่เรา render ไม่งั้นช่องวันที่จะเป็นสีขาวโพลนบนพื้นมืด */}
-    <meta name="color-scheme" content={theme === 'system' ? 'light dark' : theme} />
-    {/* สีที่ผู้ใช้ตั้งเอง — โหมดสว่างทับทั้ง --accent และ --accent-ink เพราะที่นั่นใช้สีเดียวกัน
-        โหมดมืดทับแค่ --accent (พื้นปุ่ม/จุด) ปล่อย --accent-ink เป็นสีอ่อนของธีมไว้
-        ไม่งั้นลิงก์บนพื้นมืดจะกลายเป็นสีเข้มจนอ่านไม่ออก
-        ใช้ selector `html:root` ให้ specificity สูงกว่า `:root` ใน global.css
-        จะได้ชนะโดยไม่ต้องพึ่งลำดับที่ Astro แทรกไฟล์ CSS และไม่ต้องใช้ !important
-        โครงเดียวกับ global.css: ต้องประกาศชุดมืด 2 รอบเพราะ CSS รวม media query
-        กับ attribute selector ในกฎเดียวไม่ได้ */}
-    {
-      accent && (
-        <style
-          is:inline
-          set:html={`html:root{--accent:${accent.light};--accent-ink:${accent.light}}
-html:root[data-theme="dark"]{--accent:${accent.dark}}
-@media(prefers-color-scheme:dark){html:root:not([data-theme]){--accent:${accent.dark}}}`}
-        />
-      )
-    }
+    <meta name="color-scheme" content={theme === 'invert' ? 'dark' : 'light'} />
     <title>{title}</title>
     <link
       rel="icon"

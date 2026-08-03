@@ -1,7 +1,11 @@
 export const THEME_COOKIE = 'theme';
 
-/** system = ตามเครื่อง (ไม่ใส่ data-theme ปล่อยให้ prefers-color-scheme ทำงาน) */
-export const THEMES = /** @type {const} */ (['system', 'light', 'dark']);
+/**
+ * palette /168 มี 4 สี แต่วัด contrast แล้วมีแค่ 3 คู่ที่อ่านออก และทุกคู่ต้องมี Cherry Red
+ * (ครีม/ฟ้า/ชมพู ตัดกันเองได้แค่ 1.3–1.8) ธีมจึงเหลือแค่สลับว่าเชอร์รี่เป็นพื้นหรือเป็นหมึก
+ * normal = พื้นครีม หมึกเชอร์รี่ · invert = พื้นเชอร์รี่ หมึกครีม
+ */
+export const THEMES = /** @type {const} */ (['normal', 'invert']);
 
 export const THEME_COOKIE_OPTIONS = /** @type {const} */ ({
   httpOnly: true, // ฝั่ง server เป็นคนอ่านคนเดียว ไม่มี JS ฝั่ง client แตะเลย
@@ -11,10 +15,10 @@ export const THEME_COOKIE_OPTIONS = /** @type {const} */ ({
   maxAge: 60 * 60 * 24 * 365,
 });
 
-/** @param {unknown} raw @returns {'system' | 'light' | 'dark'} */
+/** @param {unknown} raw @returns {'normal' | 'invert'} */
 export function validTheme(raw) {
   const v = String(raw ?? '');
-  return THEMES.includes(/** @type {any} */ (v)) ? /** @type {any} */ (v) : 'system';
+  return THEMES.includes(/** @type {any} */ (v)) ? /** @type {any} */ (v) : 'normal';
 }
 
 /**

@@ -8,8 +8,7 @@ import { since, sinceThai } from './src/lib/since.js';
 import { monthGrid, shiftMonth, thisMonth, todayISO, validDate, validMonth } from './src/lib/calendar.js';
 import { parseRating, starsText } from './src/lib/event.js';
 import { generateCode, hashCode, normalizeCode, verifyCode } from './src/lib/recovery.js';
-import { isMobileUA, validTheme } from './src/lib/theme.js';
-import { DEFAULT_ACCENT, accentFits, contrast, validHex } from './src/lib/color.js';
+import { validTheme } from './src/lib/theme.js';
 
 const stored = hash('correct horse battery');
 assert.ok(verify('correct horse battery', stored), 'รหัสผ่านที่ถูกต้องต้องผ่าน');
@@ -129,51 +128,13 @@ assert.ok(!verifyCode('', codeHash));
 assert.equal(hashCode('สั้นไป'), null, 'รหัสรูปแบบผิดต้อง hash ไม่ได้');
 
 // ---- ธีม ----
-assert.equal(validTheme('dark'), 'dark');
-assert.equal(validTheme('light'), 'light');
-assert.equal(validTheme('system'), 'system');
-// cookie แก้ได้จากฝั่ง client — ค่าที่ไม่รู้จักต้องตกไป system ไม่ใช่หลุดลง data-theme ดิบ ๆ
-assert.equal(validTheme('"><script>'), 'system');
-assert.equal(validTheme(undefined), 'system');
-assert.equal(validTheme(''), 'system');
-assert.equal(validTheme('DARK'), 'system', 'ตัวใหญ่ไม่นับ ต้องตรงเป๊ะ');
-
-assert.ok(isMobileUA('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148'));
-assert.ok(isMobileUA('Mozilla/5.0 (Linux; Android 14) Chrome/120.0 Mobile Safari/537.36'));
-assert.ok(!isMobileUA('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120.0 Safari/537.36'));
-assert.ok(!isMobileUA('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0 Safari/537.36'));
-assert.ok(!isMobileUA(null), 'ไม่มี UA ต้องไม่ crash');
-
-// ---- สีที่ตั้งเอง ----
-assert.equal(validHex('#852936'), '#852936');
-assert.equal(validHex('#852936 '), '#852936', 'ช่องว่างต่อท้ายต้องตัดออก');
-assert.equal(validHex('#FAF7EA'), '#faf7ea', 'เก็บเป็นตัวเล็กเสมอ');
-assert.equal(validHex('red'), null, 'ชื่อสีไม่รับ รับแต่ #rrggbb');
-assert.equal(validHex('#fff'), null, 'ย่อ 3 หลักไม่รับ');
-assert.equal(validHex('#85293'), null);
-// ค่านี้ถูกยัดลง <style> ตรง ๆ — ห้ามหลุดอะไรที่ปิด tag ได้
-assert.equal(validHex('#852936;}</style><script>'), null, 'กัน CSS/HTML injection');
-assert.equal(validHex(null), null);
-
-// contrast เป็นค่าสมมาตร จึงเช็คครั้งเดียวได้ทั้งลิงก์บนพื้นและตัวอักษรบนปุ่ม
-assert.equal(contrast('#000000', '#ffffff').toFixed(0), '21');
-assert.equal(contrast('#ffffff', '#ffffff').toFixed(0), '1');
-assert.equal(
-  contrast('#852936', '#faf7ea').toFixed(2),
-  contrast('#faf7ea', '#852936').toFixed(2),
-  'สลับลำดับต้องได้ค่าเท่ากัน',
-);
-
-// เกณฑ์คนละอันเพราะบทบาทคนละอย่าง: โหมดสว่าง accent เป็นตัวอักษรด้วย
-// โหมดมืดเป็นแค่พื้นปุ่ม/จุด (ลิงก์ใช้ --accent-ink แยก)
-assert.ok(accentFits(DEFAULT_ACCENT.light, 'light').ok, 'สีตั้งต้นโหมดสว่างต้องผ่านเกณฑ์ตัวเอง');
-assert.ok(accentFits(DEFAULT_ACCENT.dark, 'dark').ok, 'สีตั้งต้นโหมดมืดต้องผ่านเกณฑ์ตัวเอง');
-assert.ok(!accentFits('#ffe08a', 'light').ok, 'เหลืองอ่อนบนพื้นครีมอ่านไม่ออก');
-assert.ok(!accentFits('#241a1e', 'dark').ok, 'เกือบดำบนพื้นมืดแทบมองไม่เห็น');
-assert.ok(!accentFits('#fff5f0', 'dark').ok, 'สว่างจัด ตัวหนังสือครีมบนปุ่มจะอ่านไม่ออก');
-assert.match(accentFits('#ffe08a', 'light').reason, /อ่อนเกินไป/);
-assert.match(accentFits('#241a1e', 'dark').reason, /เข้มเกินไป/);
-assert.match(accentFits('#fff5f0', 'dark').reason, /สว่างเกินไป/);
+assert.equal(validTheme('normal'), 'normal');
+assert.equal(validTheme('invert'), 'invert');
+// cookie แก้ได้จากฝั่ง client — ค่าที่ไม่รู้จักต้องตกไป normal ไม่ใช่หลุดลง data-theme ดิบ ๆ
+assert.equal(validTheme('"><script>'), 'normal');
+assert.equal(validTheme('dark'), 'normal', 'ธีมเก่าที่ไม่มีแล้วต้องตกไปค่าตั้งต้น');
+assert.equal(validTheme(undefined), 'normal');
+assert.equal(validTheme('INVERT'), 'normal', 'ตัวใหญ่ไม่นับ ต้องตรงเป๊ะ');
 
 // ---- ปฏิทิน ----
 assert.equal(validMonth('2026-07'), '2026-07');

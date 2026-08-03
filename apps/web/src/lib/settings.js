@@ -1,5 +1,4 @@
 import { db } from './db.js';
-import { DEFAULT_ACCENT, validHex } from './color.js';
 
 const read = db.prepare('SELECT value FROM setting WHERE key = ?');
 const write = db.prepare(
@@ -31,23 +30,4 @@ export function siteSettings() {
     ),
     startDate: getSetting('start_date', process.env.START_DATE || '2023-01-11'),
   };
-}
-
-const drop = db.prepare('DELETE FROM setting WHERE key = ?');
-
-/** @param {string} key */
-export function clearSetting(key) {
-  drop.run(key);
-}
-
-/**
- * สีหลักที่ผู้ใช้ตั้งเอง — คืน null ถ้ายังไม่เคยตั้ง เพื่อให้ Base.astro รู้ว่าไม่ต้อง override
- * ผ่าน validHex อีกชั้นเผื่อค่าใน DB ถูกแก้มือจนเพี้ยน จะได้ไม่หลุดลง <style>
- * @returns {{ light: string, dark: string } | null}
- */
-export function accentColors() {
-  const light = validHex(getSetting('accent_light', ''));
-  const dark = validHex(getSetting('accent_dark', ''));
-  if (!light && !dark) return null;
-  return { light: light ?? DEFAULT_ACCENT.light, dark: dark ?? DEFAULT_ACCENT.dark };
 }
