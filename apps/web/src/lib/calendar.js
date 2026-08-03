@@ -14,6 +14,21 @@ export function thisMonth(now = new Date()) {
   return todayISO(now).slice(0, 7);
 }
 
+/**
+ * รับเฉพาะ 'YYYY-MM-DD' ที่มีอยู่จริงในปฏิทิน
+ * regex อย่างเดียวไม่พอ — `2026-02-31` ผ่าน regex ฉลุยแต่ไม่มีวันนั้นอยู่จริง
+ * เลยประกอบกลับจาก Date แล้วเทียบว่าได้สตริงเดิมไหม (JS จะม้วน 31 ก.พ. ไปเป็น 3 มี.ค.)
+ * @param {unknown} iso
+ * @returns {string | null}
+ */
+export function validDate(iso) {
+  const s = String(iso ?? '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  const [y, m, d] = s.split('-').map(Number);
+  if (y < 1900 || y > 2999) return null;
+  return todayISO(new Date(y, m - 1, d)) === s ? s : null;
+}
+
 /** รับเฉพาะ 'YYYY-MM' ที่เป็นเดือนจริง — query string เชื่อไม่ได้ @param {unknown} ym */
 export function validMonth(ym) {
   const s = String(ym ?? '');

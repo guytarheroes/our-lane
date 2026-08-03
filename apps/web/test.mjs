@@ -5,7 +5,7 @@ import { MAX_AGE_SEC } from './src/lib/auth.js';
 import { MAX_BYTES, pickName, safeServe, sniff } from './src/lib/upload.js';
 import { reset, tooMany } from './src/lib/ratelimit.js';
 import { since, sinceThai } from './src/lib/since.js';
-import { monthGrid, shiftMonth, thisMonth, todayISO, validMonth } from './src/lib/calendar.js';
+import { monthGrid, shiftMonth, thisMonth, todayISO, validDate, validMonth } from './src/lib/calendar.js';
 import { parseRating, starsText } from './src/lib/event.js';
 
 const stored = hash('correct horse battery');
@@ -15,18 +15,25 @@ assert.notEqual(hash('same'), hash('same'), 'salt ต้องต่างกั
 assert.ok(!verify('x', 'ไม่มี-โคลอน'), 'ค่าที่เก็บพังต้องไม่ crash และไม่ผ่าน');
 
 const t0 = Date.parse('2026-01-01T00:00:00Z');
-assert.equal(unsign(sign(42, t0), t0), 42, 'cookie ที่เราเซ็นเองต้องอ่านกลับได้');
+assert.deepEqual(unsign(sign(42, 3, t0), t0), { id: 42, version: 3 }, 'cookie ที่เราเซ็นเองต้องอ่านกลับได้');
 assert.equal(unsign('42.ปลอม'), null, 'ลายเซ็นปลอมต้องถูกปฏิเสธ');
-assert.equal(unsign('42'), null, 'ไม่มีลายเซ็นต้องถูกปฏิเสธ');
+assert.equal(unsign('42.0'), null, 'ไม่มีลายเซ็นต้องถูกปฏิเสธ');
 assert.equal(unsign(undefined), null, 'ไม่มี cookie ต้องได้ null');
-assert.equal(unsign(sign(42, t0).replace('42.', '43.'), t0), null, 'แก้ user id แล้วลายเซ็นต้องไม่ตรง');
+assert.equal(unsign(sign(42, 0, t0).replace('42.', '43.'), t0), null, 'แก้ user id แล้วลายเซ็นต้องไม่ตรง');
+
+// เปลี่ยนรหัสผ่าน = token_version บวกหนึ่ง → cookie เก่าที่ยังถือ version เดิมต้องใช้ไม่ได้
+// (ตัวเทียบจริงอยู่ใน middleware — ตรงนี้ยืนยันว่า version ถูกเซ็นและปลอมไม่ได้)
+const v1 = sign(9, 1, t0);
+assert.equal(unsign(v1, t0).version, 1, 'version ต้องเดินทางไปกับ cookie');
+assert.equal(unsign(v1.replace('9.1.', '9.2.'), t0), null, 'แก้ version แล้วลายเซ็นต้องไม่ตรง');
+assert.notEqual(sign(9, 1, t0), sign(9, 2, t0), 'คนละ version ต้องได้คนละ cookie');
 
 // cookie ที่หลุดออกไปต้องหมดอายุเองแม้ browser จะเก็บไว้เกิน maxAge
-const old = sign(7, t0);
-assert.equal(unsign(old, t0 + (MAX_AGE_SEC - 60) * 1000), 7, 'ยังไม่ครบ 30 วันต้องใช้ได้');
+const old = sign(7, 0, t0);
+assert.equal(unsign(old, t0 + (MAX_AGE_SEC - 60) * 1000).id, 7, 'ยังไม่ครบ 30 วันต้องใช้ได้');
 assert.equal(unsign(old, t0 + (MAX_AGE_SEC + 60) * 1000), null, 'เกิน 30 วันต้องหมดอายุ');
 assert.equal(unsign(old, t0 - 60_000), null, 'token จากอนาคตต้องถูกปฏิเสธ');
-assert.equal(unsign(`7.${Math.floor(t0 / 1000) + 999}.${old.split('.')[2]}`, t0), null, 'แก้เวลาแล้วลายเซ็นต้องไม่ตรง');
+assert.equal(unsign(`7.0.${Math.floor(t0 / 1000) + 999}.${old.split('.')[3]}`, t0), null, 'แก้เวลาแล้วลายเซ็นต้องไม่ตรง');
 
 // rate limit: ครั้งที่ 9 ในหน้าต่างเดียวกันต้องโดนบล็อก
 const k = 'test-ip';
@@ -104,6 +111,17 @@ assert.equal(validMonth('0099-12'), null);
 assert.equal(validMonth('1900-01'), '1900-01', 'ขอบล่างที่ยอมรับ');
 assert.equal(validMonth('2999-12'), '2999-12', 'ขอบบนที่ยอมรับ');
 assert.equal(validMonth('3000-01'), null);
+
+// วันที่ที่ไม่มีอยู่จริงต้องไม่ผ่าน — regex อย่างเดียวปล่อย 31 ก.พ. หลุด
+assert.equal(validDate('2026-07-25'), '2026-07-25');
+assert.equal(validDate('2026-02-31'), null, '31 ก.พ. ไม่มีอยู่จริง');
+assert.equal(validDate('2024-02-29'), '2024-02-29', 'อธิกสุรทินมี 29 ก.พ.');
+assert.equal(validDate('2023-02-29'), null, 'ปีปกติไม่มี 29 ก.พ.');
+assert.equal(validDate('2026-04-31'), null, 'เมษายนมี 30 วัน');
+assert.equal(validDate('2026-13-01'), null);
+assert.equal(validDate('2026-7-5'), null, 'ต้อง pad ศูนย์');
+assert.equal(validDate('0001-01-01'), null, 'ปีที่ JS Date ตีความผิด');
+assert.equal(validDate(null), null);
 
 // วันนี้ต้องคิดจากเวลาท้องถิ่น ไม่ใช่ UTC — container รัน TZ=UTC แต่คนใช้อยู่ UTC+7
 assert.match(todayISO(), /^\d{4}-\d{2}-\d{2}$/);

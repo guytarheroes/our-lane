@@ -3,9 +3,10 @@ import Base from '../layouts/Base.astro';
 import { db } from '../lib/db.js';
 import { sinceThai } from '../lib/since.js';
 import { starsText } from '../lib/event.js';
+import { siteSettings } from '../lib/settings.js';
+import Nav from '../components/Nav.astro';
 
-const startDate = process.env.START_DATE ?? '2023-01-11';
-const coupleName = process.env.COUPLE_NAME ?? 'ทางเดินความทรงจำของเราสองคน';
+const { coupleName, startDate } = siteSettings();
 
 const events = db
   .prepare('SELECT * FROM event ORDER BY event_date ASC, id ASC')
@@ -67,27 +68,7 @@ const heading = 'font-display text-pretty';
   </header>
 
   <main class={`${wrap} pt-8 pb-14 sm:pt-12 sm:pb-10`}>
-    <nav class="mb-8 flex items-center gap-2 sm:mb-12" aria-label="เมนูหลัก">
-      <a
-        href="/"
-        aria-current="page"
-        class="inline-flex min-h-9 items-center rounded-full bg-accent px-4 text-[13px] font-medium text-on-accent"
-      >
-        ไทม์ไลน์
-      </a>
-      <a
-        href="/calendar"
-        class="inline-flex min-h-9 items-center rounded-full border border-line px-4 text-[13px] font-medium text-muted"
-      >
-        ปฏิทิน
-      </a>
-      <a
-        href="/admin"
-        class="ml-auto inline-flex min-h-9 items-center gap-1 rounded-full border border-accent-ink/40 px-4 text-[13px] font-medium text-accent-ink"
-      >
-        <span aria-hidden="true">＋</span> เพิ่ม
-      </a>
-    </nav>
+    <div class="mb-8 sm:mb-12"><Nav current="timeline" /></div>
 
     {
       events.length === 0 ? (

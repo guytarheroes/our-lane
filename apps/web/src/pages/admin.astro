@@ -3,6 +3,8 @@ import Base from '../layouts/Base.astro';
 import { db, UPLOAD_DIR } from '../lib/db.js';
 import { removeImage, saveImage } from '../lib/upload.js';
 import { parseRating } from '../lib/event.js';
+import { validDate } from '../lib/calendar.js';
+import Nav from '../components/Nav.astro';
 
 let error = '';
 
@@ -25,7 +27,7 @@ if (Astro.request.method === 'POST') {
   const location = String(form.get('location') ?? '').trim() || null;
   const rating = parseRating(form.get('rating'));
 
-  if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) {
+  if (!title || !validDate(eventDate)) {
     error = 'ต้องมีหัวข้อและวันที่';
   } else {
     try {
@@ -63,17 +65,11 @@ const hatch =
 
 <Base title={editing ? 'แก้ความทรงจำ' : 'เพิ่มความทรงจำ'}>
   <main class="mx-auto w-full max-w-2xl px-5 py-7 sm:px-9 sm:py-9">
-    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <h1 class="min-w-0 font-display text-[22px] leading-[1.45] text-text sm:text-[24px]">
-        {editing ? 'แก้ความทรงจำ' : 'เพิ่มความทรงจำ'}
-      </h1>
-      <div class="flex items-center gap-2.5">
-        <a href="/" class={`${pill} border-line text-muted`}>ดู Timeline</a>
-        <form method="post" action="/logout">
-          <button class={`${pill} border-line text-muted`}>ออกจากระบบ</button>
-        </form>
-      </div>
-    </div>
+    <Nav current="admin" />
+
+    <h1 class="mt-6 mb-4 font-display text-[22px] leading-[1.45] text-text sm:text-[24px]">
+      {editing ? 'แก้ความทรงจำ' : 'เพิ่มความทรงจำ'}
+    </h1>
 
     {
       error && (

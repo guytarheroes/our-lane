@@ -1,8 +1,11 @@
 import { defineMiddleware } from 'astro:middleware';
 import { unsign } from './lib/auth.js';
+import { db } from './lib/db.js';
 
-// ponytail: ยังไม่ใส่ CSP เพราะหน้าเว็บใช้ <script is:inline> อยู่ ต้องเดินสาย nonce ก่อน
-// ceiling: เปิด experimental CSP ของ Astro เมื่อไหร่ ค่อยเพิ่ม Content-Security-Policy ตรงนี้
+// ponytail: prepare ครั้งเดียวที่ module scope — เพิ่ม lookup ด้วย PK ต่อ request
+// (รวมถึงตอนโหลดรูปใน /uploads ซึ่งหน้าเดียวยิงหลายสิบครั้ง) ระดับไมโครวินาที ไม่ต้องทำ cache
+const findUser = db.prepare('SELECT id, email, name, token_version FROM user WHERE id = ?');
+
 const HEADERS = {
   // uploads เสิร์ฟไฟล์ที่ user ส่งมา — nosniff กันเบราว์เซอร์เดาว่าเป็น HTML แล้วรัน
   'X-Content-Type-Options': 'nosniff',
@@ -15,14 +18,17 @@ const HEADERS = {
 // allowlist ไม่ใช่ blocklist: หน้าใหม่ที่เพิ่มทีหลังจะถูกกันไว้เองโดยไม่ต้องจำมาแก้ที่นี่
 // หมายเหตุ: ไฟล์ static (dist/client — ทั้ง /_astro/* และของใน public/) ถูกเสิร์ฟโดย
 // handler ที่ทำงาน "ก่อน" middleware จึงไม่ผ่านด่านนี้เลย → อย่าวางอะไรที่เป็นความลับใน public/
-const PUBLIC = new Set(['/login', '/logout']);
+const PUBLIC = new Set(['/login', '/register', '/logout']);
 
 export const onRequest = defineMiddleware(async (ctx, next) => {
-  ctx.locals.userId = unsign(ctx.cookies.get('session')?.value);
+  const token = unsign(ctx.cookies.get('session')?.value);
+  const user = token ? findUser.get(token.id) : null;
 
-  const { pathname } = ctx.url;
-  const open = PUBLIC.has(pathname);
+  // token_version ไม่ตรง = รหัสผ่านถูกเปลี่ยนหลังจาก cookie ใบนี้ถูกออก → ถือว่าไม่ได้ล็อกอิน
+  ctx.locals.user = user && user.token_version === token.version ? user : null;
+  ctx.locals.userId = ctx.locals.user?.id ?? null;
 
+  const open = PUBLIC.has(ctx.url.pathname);
   const res = !open && !ctx.locals.userId ? ctx.redirect('/login') : await next();
 
   for (const [name, value] of Object.entries(HEADERS)) res.headers.set(name, value);

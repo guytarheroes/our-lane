@@ -35,20 +35,26 @@ export function verify(password, stored) {
 const mac = (body) => createHmac('sha256', SECRET).update(body).digest('base64url');
 
 // ponytail: cookie ที่เซ็น HMAC *คือ* session เอง — ไม่มีตาราง session
-// เวลาที่ออก token ถูกเซ็นไปด้วย เพื่อให้ cookie ที่หลุดออกไปหมดอายุเองแม้ browser จะเก็บไว้ข้ามปี
-// ceiling: ถ้าต้อง revoke ทันที (เครื่องหาย) ต้องเพิ่มคอลัมน์ token_version ใน user
-/** @param {number} userId @param {number} [now] */
-export function sign(userId, now = Date.now()) {
-  const body = `${userId}.${Math.floor(now / 1000)}`;
+// เซ็น 3 อย่างไปด้วยกัน: id ของ user, token_version, และเวลาที่ออก
+//   - เวลา  → cookie ที่หลุดหมดอายุเองแม้ browser จะเก็บไว้ข้ามปี
+//   - version → เปลี่ยนรหัสผ่านแล้วบวกหนึ่ง cookie เก่าทุกอันตายทันที (revoke ได้จริง)
+// ตัวเทียบ version อยู่ใน middleware เพราะต้องอ่าน DB ที่นี่ขอเป็น pure ไว้ให้ test เรียก
+/** @param {number} userId @param {number} version @param {number} [now] */
+export function sign(userId, version, now = Date.now()) {
+  const body = `${userId}.${version}.${Math.floor(now / 1000)}`;
   return `${body}.${mac(body)}`;
 }
 
-/** @param {string | undefined} cookie @param {number} [now] @returns {number | null} */
+/**
+ * @param {string | undefined} cookie @param {number} [now]
+ * @returns {{ id: number, version: number } | null}
+ */
 export function unsign(cookie, now = Date.now()) {
-  const [id, issued, sig] = String(cookie ?? '').split('.');
-  if (!/^\d+$/.test(id ?? '') || !/^\d+$/.test(issued ?? '') || !sig) return null;
+  const [id, version, issued, sig] = String(cookie ?? '').split('.');
+  const digits = (v) => /^\d+$/.test(v ?? '');
+  if (!digits(id) || !digits(version) || !digits(issued) || !sig) return null;
 
-  const expected = mac(`${id}.${issued}`);
+  const expected = mac(`${id}.${version}.${issued}`);
   const a = Buffer.from(sig);
   const b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
@@ -56,5 +62,5 @@ export function unsign(cookie, now = Date.now()) {
   const age = Math.floor(now / 1000) - Number(issued);
   if (age < 0 || age > MAX_AGE_SEC) return null;
 
-  return Number(id);
+  return { id: Number(id), version: Number(version) };
 }

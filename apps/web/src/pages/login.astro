@@ -1,12 +1,13 @@
 ---
 import Base from '../layouts/Base.astro';
+import AuthShell from '../components/AuthShell.astro';
 import { db } from '../lib/db.js';
-import { COOKIE, hash, sign, verify } from '../lib/auth.js';
+import { COOKIE, sign, verify } from '../lib/auth.js';
 import { reset, tooMany } from '../lib/ratelimit.js';
 
 if (Astro.locals.userId) return Astro.redirect('/');
 
-// ponytail: เว็บของคู่รัก = 2 บัญชี — ปิดสมัครเองเมื่อครบ ไม่ต้องมีระบบ invite
+// ponytail: เว็บของคู่รัก = 2 บัญชี — ลิงก์ไปหน้าสมัครหายไปเองเมื่อครบ
 const { n } = db.prepare('SELECT COUNT(*) AS n FROM user').get();
 const canRegister = n < 2;
 
@@ -16,56 +17,33 @@ if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
   const email = String(form.get('email') ?? '').trim().toLowerCase();
   const password = String(form.get('password') ?? '');
-  const register = form.get('intent') === 'register';
   const ip = Astro.clientAddress || 'unknown';
 
   if (tooMany(ip)) {
     error = 'ลองผิดหลายครั้งเกินไป รออีก 15 นาทีแล้วค่อยลองใหม่';
   } else if (!email.includes('@') || password.length < 8) {
     error = 'ต้องกรอกอีเมลให้ถูกต้อง และรหัสผ่านอย่างน้อย 8 ตัวอักษร';
-  } else if (register && !canRegister) {
-    error = 'สมัครสมาชิกครบแล้ว';
-  } else if (register) {
-    try {
-      const { lastInsertRowid } = db
-        .prepare('INSERT INTO user (email, password, name) VALUES (?, ?, ?)')
-        .run(email, hash(password), String(form.get('name') ?? '').trim() || null);
-      reset(ip);
-      Astro.cookies.set('session', sign(Number(lastInsertRowid)), COOKIE);
-      return Astro.redirect('/');
-    } catch {
-      error = 'อีเมลนี้ถูกใช้แล้ว';
-    }
   } else {
-    const user = db.prepare('SELECT id, password FROM user WHERE email = ?').get(email);
+    const user = db
+      .prepare('SELECT id, password, token_version FROM user WHERE email = ?')
+      .get(email);
     if (user && verify(password, user.password)) {
       reset(ip);
-      Astro.cookies.set('session', sign(user.id), COOKIE);
+      Astro.cookies.set('session', sign(user.id, user.token_version), COOKIE);
       return Astro.redirect('/');
     }
+    // ข้อความเดียวกันทั้งกรณีไม่มีอีเมลนี้และรหัสผิด — ไม่บอกใบ้ว่าอีเมลไหนมีอยู่จริง
     error = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
   }
 }
 
-const label = 'grid gap-1.5 text-[13.5px] leading-[1.8]';
+const label = 'grid gap-1.5 text-[13px] leading-[1.8] text-body';
 const input =
-  'min-h-11 w-full rounded-full border px-[18px] text-[15px] leading-[1.6] outline-none';
-const inputWarm = `${input} border-line bg-field text-text focus:border-accent`;
-const inputAlt = `${input} border-alt-line bg-alt-field text-alt-ink focus:border-alt-muted`;
-const card = 'grid gap-4 rounded-[26px] border p-[26px]';
-const button = 'min-h-11 rounded-full px-[22px] text-[15px] font-medium';
+  'min-h-12 w-full rounded-2xl border border-line bg-field px-4 text-[15px] leading-[1.6] text-text outline-none focus:border-accent';
 ---
 
 <Base title="เข้าสู่ระบบ · Our Memory Lane">
-  <main class="mx-auto w-full max-w-3xl px-5 py-12 sm:px-14 sm:py-14">
-    <p class="mb-3 flex items-center gap-2.5">
-      <span class="block size-2 rounded-full bg-accent"></span>
-      <span class="font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-muted">
-        our memory lane
-      </span>
-    </p>
-    <h1 class="font-display text-[26px] leading-[1.45] text-text sm:text-[32px]">เข้าสู่ระบบ</h1>
-
+  <AuthShell title="ยินดีต้อนรับกลับ" subtitle="เข้าสู่ระบบเพื่อดูความทรงจำของเรา">
     {
       error && (
         <p class="mt-6 rounded-2xl border border-accent-ink/35 bg-accent/10 px-4 py-3 text-[13.5px] text-accent-ink">
@@ -74,64 +52,43 @@ const button = 'min-h-11 rounded-full px-[22px] text-[15px] font-medium';
       )
     }
 
-    <div class="mt-8 grid gap-5 sm:mt-[34px] sm:grid-cols-2 sm:items-start">
-      <form
-        method="post"
-        class={`${card} border-line bg-surface shadow-[0_3px_10px_rgba(46,43,37,0.10)]`}
-      >
-        <input type="hidden" name="intent" value="login" />
-        <h2 class="font-display text-[20px] leading-[1.5] text-text">มีบัญชีอยู่แล้ว</h2>
-        <label class={label}>
-          อีเมล
-          <input class={inputWarm} type="email" name="email" autocomplete="username" required />
-        </label>
-        <label class={label}>
-          รหัสผ่าน
-          <input
-            class={inputWarm}
-            type="password"
-            name="password"
-            autocomplete="current-password"
-            required
-          />
-        </label>
-        <button class={`${button} bg-accent text-on-accent`}>เข้าสู่ระบบ</button>
-      </form>
+    <form method="post" class="mt-7 grid gap-4">
+      <label class={label}>
+        อีเมล
+        <input
+          class={input}
+          type="email"
+          name="email"
+          autocomplete="username"
+          inputmode="email"
+          required
+        />
+      </label>
+      <label class={label}>
+        รหัสผ่าน
+        <input
+          class={input}
+          type="password"
+          name="password"
+          autocomplete="current-password"
+          required
+        />
+      </label>
+      <button class="mt-1 min-h-12 rounded-full bg-accent px-6 text-[15.5px] font-medium text-on-accent">
+        เข้าสู่ระบบ
+      </button>
+    </form>
 
-      {
-        canRegister && (
-          <form method="post" class={`${card} border-alt-line bg-alt-bg`}>
-            <input type="hidden" name="intent" value="register" />
-            <h2 class="font-display text-[20px] leading-[1.5] text-alt-ink">
-              ยังไม่มีบัญชี <span class="text-[13px] text-alt-muted">(เหลือ {2 - n} ที่)</span>
-            </h2>
-            <label class={`${label} text-alt-ink/85`}>
-              ชื่อ
-              <input class={inputAlt} type="text" name="name" autocomplete="name" />
-            </label>
-            <label class={`${label} text-alt-ink/85`}>
-              อีเมล
-              <input class={inputAlt} type="email" name="email" autocomplete="username" required />
-            </label>
-            <label class={`${label} text-alt-ink/85`}>
-              รหัสผ่าน <span class="text-alt-muted">(อย่างน้อย 8 ตัว)</span>
-              <input
-                class={inputAlt}
-                type="password"
-                name="password"
-                minlength="8"
-                autocomplete="new-password"
-                required
-              />
-            </label>
-            <button class={`${button} border border-alt-muted/45 text-alt-muted`}>สร้างบัญชี</button>
-          </form>
-        )
-      }
-    </div>
-
-    <a href="/" class="mt-8 inline-block text-[13px] text-muted underline underline-offset-4">
-      ← กลับหน้า Timeline
-    </a>
-  </main>
+    {
+      canRegister && (
+        <p class="mt-7 text-[13.5px] text-muted">
+          ยังไม่มีบัญชี?{' '}
+          <a href="/register" class="font-medium text-accent-ink underline underline-offset-4">
+            สมัครสมาชิก
+          </a>{' '}
+          (เหลือ {2 - n} ที่)
+        </p>
+      )
+    }
+  </AuthShell>
 </Base>

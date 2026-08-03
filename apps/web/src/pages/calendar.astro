@@ -3,8 +3,10 @@ import Base from '../layouts/Base.astro';
 import { db } from '../lib/db.js';
 import { monthGrid, shiftMonth, thisMonth, todayISO, validMonth } from '../lib/calendar.js';
 import { parseRating } from '../lib/event.js';
+import { siteSettings } from '../lib/settings.js';
+import Nav from '../components/Nav.astro';
 
-const coupleName = process.env.COUPLE_NAME ?? 'ทางเดินความทรงจำของเราสองคน';
+const { coupleName } = siteSettings();
 
 const span = db.prepare('SELECT MIN(event_date) AS lo, MAX(event_date) AS hi FROM event').get();
 const loMonth = span?.lo ? String(span.lo).slice(0, 7) : null;
@@ -109,27 +111,7 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
       </span>
     </p>
 
-    <nav class="flex items-center gap-2" aria-label="เมนูหลัก">
-      <a
-        href="/"
-        class="inline-flex min-h-9 items-center rounded-full border border-line px-4 text-[13px] font-medium text-muted"
-      >
-        ไทม์ไลน์
-      </a>
-      <a
-        href="/calendar"
-        aria-current="page"
-        class="inline-flex min-h-9 items-center rounded-full bg-accent px-4 text-[13px] font-medium text-on-accent"
-      >
-        ปฏิทิน
-      </a>
-      <a
-        href="/admin"
-        class="ml-auto inline-flex min-h-9 items-center gap-1 rounded-full border border-accent-ink/40 px-4 text-[13px] font-medium text-accent-ink"
-      >
-        <span aria-hidden="true">＋</span> เพิ่ม
-      </a>
-    </nav>
+    <Nav current="calendar" />
   </header>
 
   <main class={`${wrap} pb-16`}>

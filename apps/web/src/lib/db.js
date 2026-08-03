@@ -19,6 +19,10 @@ db.exec(`
     password TEXT NOT NULL,
     name     TEXT
   );
+  CREATE TABLE IF NOT EXISTS setting (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
   CREATE TABLE IF NOT EXISTS event (
     id          INTEGER PRIMARY KEY,
     title       TEXT NOT NULL,
@@ -31,5 +35,10 @@ db.exec(`
 
 // ไม่มี migration tool — เพิ่มคอลัมน์เองแบบ idempotent
 // เช็ค table_info ก่อนแทน try/catch เพราะ catch เปล่า ๆ จะกลืน error จริงที่ควรดัง
-const columns = new Set(db.prepare('PRAGMA table_info(event)').all().map((c) => c.name));
-if (!columns.has('rating')) db.exec('ALTER TABLE event ADD COLUMN rating INTEGER');
+const eventColumns = new Set(db.prepare('PRAGMA table_info(event)').all().map((c) => c.name));
+if (!eventColumns.has('rating')) db.exec('ALTER TABLE event ADD COLUMN rating INTEGER');
+
+const userColumns = new Set(db.prepare('PRAGMA table_info(user)').all().map((c) => c.name));
+if (!userColumns.has('token_version')) {
+  db.exec('ALTER TABLE user ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0');
+}

@@ -6,7 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 npm-workspaces monorepo holding one Astro site: **Our Memory Lane** — timeline ความทรงจำของคู่รัก
 **ทั้งเว็บเป็นของส่วนตัว ต้องล็อกอินก่อนถึงจะเห็นอะไรก็ตาม** (`noindex` ด้วย)
-`/` ไทม์ไลน์ · `/calendar` ปฏิทินรายเดือน · `/admin` หน้าบันทึก · `/login` ทางเข้าเดียวที่เปิด
+`/` ไทม์ไลน์ · `/calendar` ปฏิทินรายเดือน · `/admin` หน้าบันทึก · `/settings` ตั้งค่า
+`/login` + `/register` คือหน้าเดียวที่เปิดให้คนยังไม่ล็อกอินเข้าได้
 
 ## Commands
 
@@ -35,15 +36,22 @@ schema ถูกสร้างด้วย `CREATE TABLE IF NOT EXISTS` ตอ�
 **session คือ cookie ที่เซ็น HMAC** ไม่มีตาราง session — `sign()`/`unsign()` ใน `src/lib/auth.js`
 token เซ็นเวลาที่ออกไปด้วยและตรวจอายุ 30 วันฝั่ง server (cookie ที่หลุดจะหมดอายุเอง)
 
-**`src/middleware.js` กันทั้งเว็บด้วย allowlist** เปิดแค่ `/login` กับ `/logout`
+**`src/middleware.js` กันทั้งเว็บด้วย allowlist** เปิดแค่ `/login`, `/register`, `/logout`
 นอกนั้นเด้งไป `/login` หมด รวมถึง `/uploads/*` — **หน้าใหม่ที่เพิ่มทีหลังถูกกันให้อัตโนมัติ**
 ไม่ต้องกลับมาแก้ middleware และหน้าไหนก็ไม่ต้องเช็ก auth ซ้ำ
 
 **ยกเว้นไฟล์ static** (`/_astro/*` และทุกอย่างใน `public/`) ที่ handler เสิร์ฟก่อนถึง middleware
 จึงไม่ผ่านด่านเลย — ฟอนต์อยู่ตรงนั้นได้ แต่ห้ามเอาอะไรที่เป็นส่วนตัวไปวาง
 
-**สมัครสมาชิกได้แค่ 2 คน** `login.astro` นับ user แล้วซ่อนฟอร์มสมัครเมื่อครบ — นี่คือระบบสิทธิ์ทั้งหมดที่มี
+**สมัครสมาชิกได้แค่ 2 คน** `register.astro` นับ user ทั้งตอน render และตอน POST — นี่คือระบบสิทธิ์ทั้งหมดที่มี
 ไม่มี role ไม่มี ownership ต่อ event
+
+**ค่าเว็บอยู่ใน DB ไม่ใช่ env แล้ว** `siteSettings()` ใน `src/lib/settings.js` อ่านตามลำดับ
+DB → env → ค่าตั้งต้น **พอกดบันทึกใน `/settings` ครั้งแรก ค่าใน `.env` จะถูกเมินตลอดไป**
+อยากกลับไปใช้ค่าจาก env ต้อง `DELETE FROM setting WHERE key = ...` เอง
+
+**`token_version` ในตาราง user คือกลไก revoke session** เซ็นติดไปกับ cookie
+เปลี่ยนรหัสผ่าน = บวกหนึ่ง = cookie เก่าทุกใบตายทันที middleware เป็นตัวเทียบให้
 
 ## Deploy
 
@@ -123,6 +131,9 @@ JS แค่มาเติมชั่วโมง/นาที/วินาท
 **รูปที่ user อัปโหลดใช้ `<Image>` ของ `astro:assets` ไม่ได้** เพราะ astro:assets ประมวลผลตอน build
 แต่รูปพวกนี้มาถึงหลัง build — จึงเป็น `<img loading="lazy" decoding="async">` ธรรมดาที่ชี้ไป `/uploads/[file]`
 (กฎ "รูปต้อง import ผ่าน `<Image>`" ใช้กับรูปใน `src/assets/` เท่านั้น ตอนนี้ยังไม่มี)
+
+**`<Nav>` กับ `<AuthShell>` ใน `src/components/`** เป็น component 2 ตัวเดียวที่มี —
+nav เคยเขียนซ้ำ 3 หน้า เพิ่มปุ่มทีต้องแก้ 3 ที่ ถ้าจะเพิ่มหน้าใหม่ให้เรียก `<Nav current="..." />`
 
 **ห้ามเชื่อชื่อไฟล์หรือนามสกุลที่ client ส่งมา** `pickName()` ตั้งชื่อใหม่เป็น UUID จาก content-type
 ที่อยู่ใน allowlist เท่านั้น และ `safeServe()` เอา `basename()` ตัด `../` ก่อนอ่านไฟล์เสมอ

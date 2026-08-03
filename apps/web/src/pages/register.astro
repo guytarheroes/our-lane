@@ -1,0 +1,108 @@
+---
+import Base from '../layouts/Base.astro';
+import AuthShell from '../components/AuthShell.astro';
+import { db } from '../lib/db.js';
+import { COOKIE, hash, sign } from '../lib/auth.js';
+import { reset, tooMany } from '../lib/ratelimit.js';
+
+if (Astro.locals.userId) return Astro.redirect('/');
+
+// ponytail: เว็บของคู่รัก = 2 บัญชี — นี่คือระบบสิทธิ์ทั้งหมดที่มี ไม่ต้องมีระบบ invite
+// เช็คทุกครั้งที่ POST ด้วย ไม่ใช่แค่ตอน render ไม่งั้นยิงตรงมาก็สมัครคนที่ 3 ได้
+const { n } = db.prepare('SELECT COUNT(*) AS n FROM user').get();
+const canRegister = n < 2;
+
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const email = String(form.get('email') ?? '').trim().toLowerCase();
+  const password = String(form.get('password') ?? '');
+  const name = String(form.get('name') ?? '').trim().slice(0, 60);
+  const ip = Astro.clientAddress || 'unknown';
+
+  if (tooMany(ip)) {
+    error = 'ลองหลายครั้งเกินไป รออีก 15 นาทีแล้วค่อยลองใหม่';
+  } else if (!canRegister) {
+    error = 'สมัครสมาชิกครบ 2 คนแล้ว';
+  } else if (!email.includes('@') || password.length < 8) {
+    error = 'ต้องกรอกอีเมลให้ถูกต้อง และรหัสผ่านอย่างน้อย 8 ตัวอักษร';
+  } else {
+    try {
+      const { lastInsertRowid } = db
+        .prepare('INSERT INTO user (email, password, name) VALUES (?, ?, ?)')
+        .run(email, hash(password), name || null);
+      reset(ip);
+      Astro.cookies.set('session', sign(Number(lastInsertRowid), 0), COOKIE);
+      return Astro.redirect('/');
+    } catch {
+      // UNIQUE constraint บนคอลัมน์ email เป็นตัวกันซ้ำจริง ไม่ใช่การเช็คก่อน insert
+      error = 'อีเมลนี้ถูกใช้แล้ว';
+    }
+  }
+}
+
+const label = 'grid gap-1.5 text-[13px] leading-[1.8] text-body';
+const input =
+  'min-h-12 w-full rounded-2xl border border-line bg-field px-4 text-[15px] leading-[1.6] text-text outline-none focus:border-accent';
+---
+
+<Base title="สมัครสมาชิก · Our Memory Lane">
+  <AuthShell
+    title={canRegister ? 'สร้างบัญชี' : 'สมัครครบแล้ว'}
+    subtitle={canRegister
+      ? `เว็บนี้เปิดให้แค่ 2 คน — เหลืออีก ${2 - n} ที่`
+      : 'มีครบ 2 บัญชีแล้ว เข้าสู่ระบบด้วยบัญชีที่มีอยู่ได้เลย'}
+  >
+    {
+      error && (
+        <p class="mt-6 rounded-2xl border border-accent-ink/35 bg-accent/10 px-4 py-3 text-[13.5px] text-accent-ink">
+          {error}
+        </p>
+      )
+    }
+
+    {
+      canRegister && (
+        <form method="post" class="mt-7 grid gap-4">
+          <label class={label}>
+            ชื่อ <span class="text-muted">(ไม่ใส่ก็ได้)</span>
+            <input class={input} type="text" name="name" autocomplete="name" maxlength="60" />
+          </label>
+          <label class={label}>
+            อีเมล
+            <input
+              class={input}
+              type="email"
+              name="email"
+              autocomplete="username"
+              inputmode="email"
+              required
+            />
+          </label>
+          <label class={label}>
+            รหัสผ่าน <span class="text-muted">(อย่างน้อย 8 ตัว)</span>
+            <input
+              class={input}
+              type="password"
+              name="password"
+              minlength="8"
+              autocomplete="new-password"
+              required
+            />
+          </label>
+          <button class="mt-1 min-h-12 rounded-full bg-accent px-6 text-[15.5px] font-medium text-on-accent">
+            สร้างบัญชี
+          </button>
+        </form>
+      )
+    }
+
+    <p class="mt-7 text-[13.5px] text-muted">
+      มีบัญชีอยู่แล้ว?{' '}
+      <a href="/login" class="font-medium text-accent-ink underline underline-offset-4">
+        เข้าสู่ระบบ
+      </a>
+    </p>
+  </AuthShell>
+</Base>
