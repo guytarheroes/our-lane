@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { THEME_COOKIE, validTheme } from '../lib/theme.js';
+import { LANG_COOKIE, validLang } from '../lib/i18n.js';
 
 interface Props {
   title?: string;
@@ -11,10 +12,12 @@ const { title = 'Our Memory Lane' } = Astro.props;
 // อ่านจาก cookie แล้ว render ไปเลยตั้งแต่ฝั่ง server — ไม่มีจอกระพริบตอนโหลด
 // แบบที่ theme switcher ซึ่งอ่าน localStorage ด้วย JS มักเป็น
 const theme = validTheme(Astro.cookies.get(THEME_COOKIE)?.value);
+// lang ไม่ใช่แค่ metadata — เบราว์เซอร์ใช้ตัดคำภาษาไทย ตั้งผิดแล้วบรรทัดจะตัดผิดกฎ
+const lang = validLang(Astro.cookies.get(LANG_COOKIE)?.value);
 ---
 
 <!doctype html>
-<html lang="th" data-theme={theme === 'invert' ? 'invert' : undefined}>
+<html lang={lang} data-theme={theme === 'invert' ? 'invert' : undefined}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

@@ -1,9 +1,12 @@
 ---
+import { LANG_COOKIE, dict, validLang } from '../lib/i18n.js';
+
 interface Props {
   current: 'timeline' | 'calendar' | 'admin' | 'settings';
 }
 
 const { current } = Astro.props;
+const t = dict(validLang(Astro.cookies.get(LANG_COOKIE)?.value));
 const user = Astro.locals.user;
 
 const pill = 'inline-flex min-h-9 flex-none items-center rounded-full px-3.5 text-[13px] font-medium sm:px-4';
@@ -15,7 +18,7 @@ const item = 'block rounded-xl px-3 py-2 text-[13.5px]';
 const initial = (user?.name?.trim() || user?.email || '—').trim().charAt(0).toUpperCase();
 ---
 
-<nav class="fixed inset-x-0 top-0 z-30 h-14 border-b border-line bg-bg" aria-label="เมนูหลัก">
+<nav class="fixed inset-x-0 top-0 z-30 h-14 border-b border-line bg-bg" aria-label={t('nav.menu')}>
   <div class="mx-auto flex h-full w-full max-w-5xl items-center gap-2 px-5 sm:px-12">
     <p class="flex flex-none items-center gap-2.5">
       <span class="pulse block size-2 rounded-full bg-accent"></span>
@@ -26,15 +29,15 @@ const initial = (user?.name?.trim() || user?.email || '—').trim().charAt(0).to
     </p>
 
     <a href="/" class={current === 'timeline' ? on : off} aria-current={current === 'timeline' ? 'page' : undefined}>
-      ไทม์ไลน์
+      {t('nav.timeline')}
     </a>
     <a href="/calendar" class={current === 'calendar' ? on : off} aria-current={current === 'calendar' ? 'page' : undefined}>
-      ปฏิทิน
+      {t('nav.calendar')}
     </a>
 
     <a
       href="/admin"
-      aria-label="เพิ่มความทรงจำ"
+      aria-label={t('nav.add')}
       aria-current={current === 'admin' ? 'page' : undefined}
       class:list={[
         'ml-auto inline-flex size-9 flex-none items-center justify-center rounded-full text-[17px] leading-none',
@@ -49,7 +52,7 @@ const initial = (user?.name?.trim() || user?.email || '—').trim().charAt(0).to
     <details class="relative flex-none">
       <summary
         class="flex size-9 cursor-pointer list-none items-center justify-center rounded-full border border-alt-muted/45 bg-alt-bg text-[14px] font-medium text-alt-ink marker:hidden [&::-webkit-details-marker]:hidden"
-        aria-label="เมนูบัญชี"
+        aria-label={t('nav.account')}
       >
         {initial}
       </summary>
@@ -58,7 +61,7 @@ const initial = (user?.name?.trim() || user?.email || '—').trim().charAt(0).to
         class="absolute top-full right-0 z-20 mt-2 w-56 rounded-2xl border border-line bg-surface p-2 shadow-[0_8px_24px_rgba(133,41,54,0.18)]"
       >
         <p class="px-3 py-2">
-          <span class="block truncate text-[14px] text-text">{user?.name || 'ยังไม่ได้ตั้งชื่อ'}</span>
+          <span class="block truncate text-[14px] text-text">{user?.name || t('nav.noName')}</span>
           <span class="block truncate font-mono text-[11px] text-muted">{user?.email}</span>
         </p>
 
@@ -66,18 +69,18 @@ const initial = (user?.name?.trim() || user?.email || '—').trim().charAt(0).to
           href="/admin#list"
           class:list={[item, current === 'admin' ? 'bg-accent text-on-accent' : 'text-body hover:bg-field']}
         >
-          รายการของฉัน
+          {t('nav.myList')}
         </a>
         <a
           href="/settings"
           aria-current={current === 'settings' ? 'page' : undefined}
           class:list={[item, current === 'settings' ? 'bg-accent text-on-accent' : 'text-body hover:bg-field']}
         >
-          ตั้งค่า
+          {t('nav.settings')}
         </a>
 
         <form method="post" action="/logout">
-          <button class={`${item} w-full text-left text-accent-ink hover:bg-field`}>ออกจากระบบ</button>
+          <button class={`${item} w-full text-left text-accent-ink hover:bg-field`}>{t('nav.logout')}</button>
         </form>
       </div>
     </details>

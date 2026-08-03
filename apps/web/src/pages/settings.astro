@@ -8,6 +8,7 @@ import { setSetting, siteSettings } from '../lib/settings.js';
 import { todayISO, validDate } from '../lib/calendar.js';
 import { generateCode, hashCode } from '../lib/recovery.js';
 import { THEME_COOKIE, THEME_COOKIE_OPTIONS, validTheme } from '../lib/theme.js';
+import { LANG_COOKIE, LANG_COOKIE_OPTIONS, validLang } from '../lib/i18n.js';
 
 const me = Astro.locals.user;
 let error = '';
@@ -57,6 +58,11 @@ if (Astro.request.method === 'POST') {
     }
   }
 
+  if (intent === 'lang') {
+    Astro.cookies.set(LANG_COOKIE, validLang(form.get('lang')), LANG_COOKIE_OPTIONS);
+    return Astro.redirect('/settings?saved=lang', 303);
+  }
+
   if (intent === 'theme') {
     Astro.cookies.set(THEME_COOKIE, validTheme(form.get('theme')), THEME_COOKIE_OPTIONS);
     return Astro.redirect('/settings?saved=theme', 303);
@@ -92,11 +98,13 @@ const savedMessage = {
   password: 'เปลี่ยนรหัสผ่านแล้ว — อุปกรณ์อื่นถูกให้ออกจากระบบทั้งหมด',
   site: 'บันทึกค่าเว็บแล้ว',
   theme: 'เปลี่ยนธีมแล้ว',
+  lang: 'เปลี่ยนภาษาแล้ว',
   recovered: 'ตั้งรหัสผ่านใหม่แล้ว — รหัสกู้คืนอันเดิมถูกใช้ไปแล้ว สร้างอันใหม่เก็บไว้ด้วย',
 }[saved ?? ''];
 
 const site = siteSettings();
 const theme = validTheme(Astro.cookies.get(THEME_COOKIE)?.value);
+const lang = validLang(Astro.cookies.get(LANG_COOKIE)?.value);
 
 // ไอคอนวาดเอง ไม่ใช้ icon library ตามกฎห้ามเพิ่ม dependency — 24x24 stroke ตาม currentColor
 // ไอคอนวาดเอง ไม่ใช้ icon library ตามกฎห้ามเพิ่ม dependency — 24x24 stroke ตาม currentColor
@@ -143,6 +151,31 @@ const heading = 'font-display text-[17px] leading-[1.5] text-text';
     }
 
     <div class="grid gap-5">
+      <form method="post" class={card}>
+        <input type="hidden" name="intent" value="lang" />
+        <h2 class={heading}>ภาษา / Language</h2>
+        <div class="flex gap-1.5 rounded-full border border-line bg-field p-1">
+          {
+            [
+              { value: 'th', label: 'ไทย' },
+              { value: 'en', label: 'English' },
+            ].map((opt) => (
+              <button
+                name="lang"
+                value={opt.value}
+                aria-current={lang === opt.value ? 'true' : undefined}
+                class:list={[
+                  'min-h-9 flex-1 rounded-full text-[13px] font-medium',
+                  lang === opt.value ? 'bg-accent text-on-accent' : 'text-muted hover:bg-surface',
+                ]}
+              >
+                {opt.label}
+              </button>
+            ))
+          }
+        </div>
+      </form>
+
       <form method="post" class={card}>
         <input type="hidden" name="intent" value="theme" />
         <h2 class={heading}>ธีม</h2>
