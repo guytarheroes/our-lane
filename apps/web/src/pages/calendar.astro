@@ -42,6 +42,17 @@ for (const e of events) {
 const count = events.length;
 const maxMonthly = Number(peak?.peak ?? 0);
 
+// สถิติรูป — วงแหวนเทียบกับเดือนที่มีรูปเยอะที่สุด คนละมาตรกับวงความทรงจำ
+// (เทียบกับ maxMonthly ไม่ได้ เดือนที่มีความทรงจำ 10 แต่มีรูป 2 วงจะดูแบนเกินจริง)
+const photos = events.filter((e) => e.image).length;
+const maxPics = Number(
+  db
+    .prepare(
+      'SELECT MAX(c) AS peak FROM (SELECT COUNT(*) AS c FROM event WHERE image IS NOT NULL GROUP BY substr(event_date, 1, 7))',
+    )
+    .get()?.peak ?? 0,
+);
+
 const prev = shiftMonth(month, -1);
 const next = shiftMonth(month, 1);
 const canPrev = loMonth !== null && prev >= loMonth;
@@ -219,31 +230,36 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
       }
     </div>
 
-    <div class="mt-8 flex justify-center">
-      <div class="relative size-[136px] sm:size-[164px]">
-        <svg viewBox="0 0 120 120" class="size-full -rotate-90" aria-hidden="true">
-          <circle cx="60" cy="60" r="54" fill="none" stroke="var(--line)" stroke-width="7" />
-          <circle
-            cx="60" cy="60" r="54" fill="none"
-            stroke="var(--accent)" stroke-width="7" stroke-linecap="round"
-            stroke-dasharray={`${ring(count, maxMonthly) * C} ${C}`}
-          />
-        </svg>
-        <div class="absolute inset-0 flex flex-col items-center justify-center">
-          <span class="font-display text-[34px] leading-none text-text sm:text-[40px]">{count}</span>
-          <span class="mt-1.5 text-[12px] text-muted">{t('cal.memories')}</span>
-        </div>
-      </div>
-
+    {/* สองวงเรียงกัน — วงเล็กลงจากตอนมีวงเดียว ไม่งั้นรวมกันแล้วเกิน 320px */}
+    <div class="mt-8 flex justify-center gap-4 sm:gap-8">
+      {
+        [
+          { n: count, total: maxMonthly, label: t('cal.memories') },
+          { n: photos, total: maxPics, label: t('cal.pics') },
+        ].map((stat) => (
+          <div class="relative size-[116px] sm:size-[150px]">
+            <svg viewBox="0 0 120 120" class="size-full -rotate-90" aria-hidden="true">
+              <circle cx="60" cy="60" r="54" fill="none" stroke="var(--line)" stroke-width="7" />
+              <circle
+                cx="60" cy="60" r="54" fill="none"
+                stroke="var(--accent)" stroke-width="7" stroke-linecap="round"
+                stroke-dasharray={`${ring(stat.n, stat.total) * C} ${C}`}
+              />
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span class="font-display text-[30px] leading-none text-text sm:text-[38px]">{stat.n}</span>
+              <span class="mt-1.5 text-[12px] text-muted">{stat.label}</span>
+            </div>
+          </div>
+        ))
+      }
     </div>
 
+    {/* หัวข้อ "Pics" เคยอยู่ตรงนี้ ถอดออกตอนเพิ่มวงสถิติรูป เพราะคำเดียวกันโผล่สองที่ติดกัน
+        ดูเหมือนบั๊กมากกว่าดีไซน์ — ตอนนี้วงแหวนเป็นตัวบอกแทน */}
     {/* ปฏิทินคือข้อมูลตาราง — <table> ทำให้ screen reader อ่านหัวคอลัมน์ได้เองโดยไม่ต้องใส่ ARIA */}
-    <h2 class="font-display mt-9 mb-3 text-center text-[22px] text-alt-ink sm:text-[26px]">
-      {t('cal.pics')}
-    </h2>
-
     {/* แผงเชอร์รี่ครอบตาราง — ช่องเป็นครีม คู่นี้ contrast 8.26 สูงสุดใน palette */}
-    <div class="rounded-[26px] bg-accent p-2.5 sm:rounded-[32px] sm:p-4">
+    <div class="mt-9 rounded-[26px] bg-accent p-2.5 sm:rounded-[32px] sm:p-4">
     <table class="w-full table-fixed border-separate border-spacing-1 sm:border-spacing-2">
       <thead>
         <tr>

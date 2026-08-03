@@ -147,8 +147,15 @@
    มีแค่ละติน U+0020–U+017E กับ € รวม 319 ตัว
    จึงห้ามเอาไปใส่ body หรือหัวข้อ ข้อความไทยจะตกไปใช้ Bai Jamjuree
    แล้วบรรทัดเดียวกันจะมีทั้งตัวพิกเซลกับตัวเรียบปนกันจนดูเหมือนเว็บพัง
-   ใช้ได้เฉพาะที่เป็นละตินล้วนโดยตั้งใจ = wordmark "our memory lane" เท่านั้น
-   แปลงเป็น woff2 แล้ว 39KB → 5.9KB เล็กกว่าไฟล์ Bai Jamjuree ทุกไฟล์ */
+   ในโหมดไทยจึงใช้ได้ที่เดียวคือ wordmark "our memory lane" ที่เป็นละตินล้วนโดยตั้งใจ
+   ส่วนโหมดอังกฤษใช้ได้ทั้งหน้า (ดูบล็อก html[lang='en'] ข้างล่าง)
+
+   ไฟล์ใน public/fonts/ ทำมาจาก Pixellari.ttf ด้วย fontTools 2 ขั้น:
+   1. ตั้ง advance ของเลข 0-9 ให้เท่ากันหมด (ต้นฉบับ 0147 กว้าง 576 ที่เหลือ 512)
+      ฟอนต์นี้ไม่มีตาราง GSUB → `tabular-nums` ใน CSS ไม่มีผล ถ้าไม่แก้ที่ไฟล์
+      ตัวนับวินาทีบนหน้าแรกจะขยับซ้ายขวาทุกวินาที **ห้ามขยับตัวอักษรมากลางช่อง**
+      เพราะ (576-512)/2 = 32 หน่วย = ครึ่งพิกเซล แล้วจะเบลอ ปล่อยชิดซ้ายไว้
+   2. f.flavor = 'woff2' → 39KB เหลือ 6KB เล็กกว่าไฟล์ Bai Jamjuree ทุกไฟล์ */
 @font-face {
   font-family: 'Pixellari';
   font-style: normal;
@@ -169,6 +176,26 @@
   font-family: 'Pixellari', ui-monospace, monospace;
   font-size: 16px;
   letter-spacing: 1px;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+}
+
+/* **โหมดอังกฤษใช้ Pixellari ทั้งหน้า** — ทำได้เพราะพอเป็นอังกฤษก็ไม่มีตัวไทยให้ตกฟอนต์
+   เกาะกับ `html[lang]` ที่ `Base.astro` render มาจากฝั่ง server อยู่แล้ว ไม่ต้องใช้ JS
+   และไม่มีจอกระพริบ · สลับกลับเป็นไทยได้ Bai Jamjuree คืนมาทันที
+
+   `@theme inline` ทำให้ Tailwind ฝัง "Bai Jamjuree" ลง utility ตรง ๆ ไม่ได้อ้าง var()
+   แก้ที่ตัวแปรจึงไม่มีผล ต้องเขียนทับที่คลาสตามนี้ (specificity ของ `html[lang]` ชนะ)
+
+   `font-synthesis: none` สำคัญ — Pixellari มีน้ำหนักเดียว ถ้าไม่ปิด เบราว์เซอร์จะปลอม
+   ตัวหนาให้ที่ `.font-display` (600) ด้วยการถ่างเส้นเอง แล้วพิกเซลจะเละ */
+html[lang='en'] body,
+html[lang='en'] .font-body,
+html[lang='en'] .font-display,
+html[lang='en'] .font-mono {
+  font-family: 'Pixellari', ui-monospace, monospace;
+  font-weight: 400;
+  font-synthesis: none;
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: unset;
 }
