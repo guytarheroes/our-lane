@@ -18,7 +18,7 @@
   --accent: #852936;
   --accent-ink: #852936;
   --on-accent: #faf7ea;
-  --star-empty: #e1aebc;
+  --star-empty: #85293659;  /* เชอร์รี่จาง — ชมพูบนครีม contrast 1.78 มองไม่เห็น */
 
   --soft: #e1aebc;
   --soft-bg: #e1aebc;
@@ -131,6 +131,7 @@
   --accent-ink: #852936;
   --on-accent: #faf7ea;
   --field: #faf7ea;
+  --star-empty: #85293659;
 
   /* ต้องตั้ง color ที่ตัวการ์ดด้วย — element ที่ไม่มีคลาสสีจะสืบทอด color ที่ <body>
      คำนวณไว้แล้ว (ครีม) การประกาศ custom property เฉย ๆ ไม่ย้อนไปแก้ค่านั้น */
