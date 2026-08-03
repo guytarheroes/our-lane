@@ -37,8 +37,13 @@ db.exec(`
 // เช็ค table_info ก่อนแทน try/catch เพราะ catch เปล่า ๆ จะกลืน error จริงที่ควรดัง
 const eventColumns = new Set(db.prepare('PRAGMA table_info(event)').all().map((c) => c.name));
 if (!eventColumns.has('rating')) db.exec('ALTER TABLE event ADD COLUMN rating INTEGER');
+// เก็บสัดส่วนรูปไว้จองที่บนการ์ดก่อนรูปโหลด ไม่งั้นข้อความใต้รูปจะกระโดดตอนโหลดเสร็จ
+if (!eventColumns.has('image_w')) db.exec('ALTER TABLE event ADD COLUMN image_w INTEGER');
+if (!eventColumns.has('image_h')) db.exec('ALTER TABLE event ADD COLUMN image_h INTEGER');
 
 const userColumns = new Set(db.prepare('PRAGMA table_info(user)').all().map((c) => c.name));
 if (!userColumns.has('token_version')) {
   db.exec('ALTER TABLE user ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0');
 }
+// เก็บเป็น hash เหมือนรหัสผ่าน ไม่เก็บตัวจริง — ใครอ่าน DB ได้ก็ยังกู้บัญชีไม่ได้
+if (!userColumns.has('recovery')) db.exec('ALTER TABLE user ADD COLUMN recovery TEXT');

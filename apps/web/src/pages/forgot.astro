@@ -1,0 +1,103 @@
+---
+import Base from '../layouts/Base.astro';
+import AuthShell from '../components/AuthShell.astro';
+import { db } from '../lib/db.js';
+import { COOKIE, hash, sign } from '../lib/auth.js';
+import { reset, tooMany } from '../lib/ratelimit.js';
+import { verifyCode } from '../lib/recovery.js';
+
+if (Astro.locals.userId) return Astro.redirect('/');
+
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const email = String(form.get('email') ?? '').trim().toLowerCase();
+  const code = form.get('code');
+  const next = String(form.get('next') ?? '');
+  const confirm = String(form.get('confirm') ?? '');
+  const ip = Astro.clientAddress || 'unknown';
+
+  // หน้านี้เปิดให้คนยังไม่ล็อกอิน — rate limit สำคัญกว่าที่อื่น
+  if (tooMany(ip)) {
+    error = 'ลองผิดหลายครั้งเกินไป รออีก 15 นาทีแล้วค่อยลองใหม่';
+  } else if (next.length < 8) {
+    error = 'รหัสผ่านใหม่ต้องยาวอย่างน้อย 8 ตัวอักษร';
+  } else if (next !== confirm) {
+    error = 'รหัสผ่านใหม่กับช่องยืนยันไม่ตรงกัน';
+  } else {
+    const user = db
+      .prepare('SELECT id, recovery, token_version FROM user WHERE email = ?')
+      .get(email);
+
+    if (verifyCode(code, user?.recovery)) {
+      const version = user.token_version + 1;
+      // ใช้ได้ครั้งเดียว — ล้างทิ้งเลย แล้วบังคับให้ไปสร้างใหม่ที่ /settings
+      // token_version บวกหนึ่ง = เตะทุกเครื่องที่ค้างล็อกอินอยู่ออก เผื่อรหัสเดิมหลุดไปแล้ว
+      db.prepare(
+        'UPDATE user SET password = ?, recovery = NULL, token_version = ? WHERE id = ?',
+      ).run(hash(next), version, user.id);
+
+      reset(ip);
+      Astro.cookies.set('session', sign(user.id, version), COOKIE);
+      return Astro.redirect('/settings?saved=recovered', 303);
+    }
+
+    // ข้อความเดียวกันทุกกรณี — ไม่บอกใบ้ว่าอีเมลไหนมีอยู่จริงหรือรหัสกู้คืนผิดตรงไหน
+    error = 'อีเมลหรือรหัสกู้คืนไม่ถูกต้อง';
+  }
+}
+
+const label = 'grid gap-1.5 text-[13px] leading-[1.8] text-body';
+const input =
+  'min-h-12 w-full rounded-2xl border border-line bg-field px-4 text-[15px] leading-[1.6] text-text outline-none focus:border-accent';
+---
+
+<Base title="ลืมรหัสผ่าน · Our Memory Lane">
+  <AuthShell title="ลืมรหัสผ่าน" subtitle="ใช้รหัสกู้คืนที่เคยจดไว้ตอนตั้งค่าบัญชี">
+    {
+      error && (
+        <p class="mt-6 rounded-2xl border border-accent-ink/35 bg-accent/10 px-4 py-3 text-[13.5px] text-accent-ink">
+          {error}
+        </p>
+      )
+    }
+
+    <form method="post" class="mt-7 grid gap-4">
+      <label class={label}>
+        อีเมล
+        <input class={input} type="email" name="email" autocomplete="username" inputmode="email" required />
+      </label>
+      <label class={label}>
+        รหัสกู้คืน <span class="text-muted">(พิมพ์ตัวเล็กหรือไม่ใส่ขีดก็ได้)</span>
+        <input
+          class={`${input} font-mono tracking-[0.08em]`}
+          type="text"
+          name="code"
+          placeholder="XXXXX-XXXXX-XXXXX"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          required
+        />
+      </label>
+      <label class={label}>
+        รหัสผ่านใหม่ <span class="text-muted">(อย่างน้อย 8 ตัว)</span>
+        <input class={input} type="password" name="next" minlength="8" autocomplete="new-password" required />
+      </label>
+      <label class={label}>
+        ยืนยันรหัสผ่านใหม่
+        <input class={input} type="password" name="confirm" minlength="8" autocomplete="new-password" required />
+      </label>
+      <button class="mt-1 min-h-12 rounded-full bg-accent px-6 text-[15.5px] font-medium text-on-accent">
+        ตั้งรหัสผ่านใหม่
+      </button>
+    </form>
+
+    <p class="mt-7 text-[13.5px] leading-[1.9] text-muted">
+      <a href="/login" class="font-medium text-accent-ink underline underline-offset-4">กลับไปเข้าสู่ระบบ</a>
+      <br />
+      ไม่มีรหัสกู้คืน? ให้อีกคนที่ยังล็อกอินอยู่ช่วยดูให้ หรือกู้จากเครื่องเซิร์ฟเวอร์
+    </p>
+  </AuthShell>
+</Base>

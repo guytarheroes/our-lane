@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import { db } from '../lib/db.js';
 import { sinceThai } from '../lib/since.js';
 import { starsText } from '../lib/event.js';
+import { imageSize } from '../lib/thumb.js';
 import { siteSettings } from '../lib/settings.js';
 import Nav from '../components/Nav.astro';
 
@@ -11,6 +12,19 @@ const { coupleName, startDate } = siteSettings();
 const events = db
   .prepare('SELECT * FROM event ORDER BY event_date ASC, id ASC')
   .all();
+
+// รูปที่อัปไว้ก่อนมีคอลัมน์นี้ยังไม่รู้สัดส่วน — อ่านครั้งเดียวแล้วเก็บไว้ ครั้งต่อไปไม่ต้องอ่านอีก
+const unsized = events.filter((e) => e.image && !e.image_w);
+if (unsized.length) {
+  const remember = db.prepare('UPDATE event SET image_w = ?, image_h = ? WHERE id = ?');
+  for (const e of unsized) {
+    const size = await imageSize(e.image);
+    if (!size) continue;
+    remember.run(size.width, size.height, e.id);
+    e.image_w = size.width;
+    e.image_h = size.height;
+  }
+}
 
 const long = new Intl.DateTimeFormat('th-TH', { dateStyle: 'long' });
 const medium = new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium' });
@@ -107,7 +121,13 @@ const heading = 'font-display text-pretty';
                       loading="lazy"
                       decoding="async"
                       onload="this.classList.remove('skeleton')"
-                      class="skeleton aspect-[4/3] w-full object-cover"
+                      width={e.image_w ?? undefined}
+                      height={e.image_h ?? undefined}
+                      class:list={[
+                        'skeleton w-full',
+                        // ไม่รู้สัดส่วน (sharp ใช้ไม่ได้) ค่อยตกไปใช้กรอบ 4:3 แบบเดิม
+                        !e.image_w && 'aspect-[4/3] object-cover',
+                      ]}
                     />
                     <div class="px-5 pt-[18px] pb-[22px] sm:px-7 sm:pt-[26px] sm:pb-[30px]">
                       <time datetime={e.event_date} class={`${stamp} block text-muted`}>

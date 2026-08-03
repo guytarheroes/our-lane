@@ -7,6 +7,7 @@ import { reset, tooMany } from './src/lib/ratelimit.js';
 import { since, sinceThai } from './src/lib/since.js';
 import { monthGrid, shiftMonth, thisMonth, todayISO, validDate, validMonth } from './src/lib/calendar.js';
 import { parseRating, starsText } from './src/lib/event.js';
+import { generateCode, hashCode, normalizeCode, verifyCode } from './src/lib/recovery.js';
 
 const stored = hash('correct horse battery');
 assert.ok(verify('correct horse battery', stored), 'รหัสผ่านที่ถูกต้องต้องผ่าน');
@@ -98,6 +99,32 @@ assert.equal(starsText(null), '', 'ไม่มีดาว = สตริงว
 // '☆'.repeat(5 - 6) throw RangeError — ถ้าไม่กรองก่อน หน้าไทม์ไลน์ทั้งหน้าจะ 500 เพราะข้อมูลแถวเดียว
 assert.equal(starsText(6), '', 'ค่าหลุดขอบเขตจาก DB ต้องไม่ทำให้พัง');
 assert.equal(starsText(-1), '');
+
+// ---- รหัสกู้คืน ----
+const code = generateCode();
+assert.match(code, /^[A-HJ-NP-Z2-9]{5}-[A-HJ-NP-Z2-9]{5}-[A-HJ-NP-Z2-9]{5}$/, 'รูปแบบ XXXXX-XXXXX-XXXXX');
+assert.equal(new Set(Array.from({ length: 200 }, generateCode)).size, 200, 'ต้องไม่ซ้ำกัน');
+assert.ok(!/[IOL01]/.test(Array.from({ length: 200 }, generateCode).join('')), 'ห้ามมีตัวที่อ่านสับสน I O L 0 1');
+
+// คนกรอกกลับมาจะพิมพ์ตัวเล็ก/ไม่ใส่ขีด/มีช่องว่าง — ต้องเทียบกันได้หมด
+const plain = code.replace(/-/g, '');
+assert.equal(normalizeCode(code), plain, 'มีขีด');
+assert.equal(normalizeCode(code.toLowerCase()), plain, 'ตัวเล็ก');
+assert.equal(normalizeCode(` ${code.toLowerCase().replace(/-/g, ' ')} `), plain, 'ช่องว่างแทนขีด');
+assert.equal(normalizeCode('สั้นไป'), null);
+assert.equal(normalizeCode(plain + 'X'), null, 'ยาวเกินต้องไม่ผ่าน');
+assert.equal(normalizeCode(null), null);
+
+// เก็บกับตรวจต้อง normalize เหมือนกัน — เคยพลาดตรงนี้มาแล้ว เก็บแบบมีขีดแต่ตรวจแบบไม่มี
+const codeHash = hashCode(code);
+assert.ok(verifyCode(code, codeHash), 'รหัสเต็มรูปแบบต้องผ่าน');
+assert.ok(verifyCode(code.toLowerCase(), codeHash), 'ตัวเล็กต้องผ่าน');
+assert.ok(verifyCode(plain, codeHash), 'ไม่มีขีดต้องผ่าน');
+assert.ok(verifyCode(` ${plain.toLowerCase()} `, codeHash), 'มีช่องว่างต้องผ่าน');
+assert.ok(!verifyCode('ZZZZZ-ZZZZZ-ZZZZZ', codeHash), 'รหัสผิดต้องไม่ผ่าน');
+assert.ok(!verifyCode(code, null), 'ยังไม่เคยสร้างรหัสกู้คืนต้องไม่ผ่าน');
+assert.ok(!verifyCode('', codeHash));
+assert.equal(hashCode('สั้นไป'), null, 'รหัสรูปแบบผิดต้อง hash ไม่ได้');
 
 // ---- ปฏิทิน ----
 assert.equal(validMonth('2026-07'), '2026-07');
