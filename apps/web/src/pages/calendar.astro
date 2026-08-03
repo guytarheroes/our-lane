@@ -93,7 +93,7 @@ const dot = 'mt-0.5 block size-1 rounded-full';
 
 const wrap = 'mx-auto w-full max-w-3xl px-5 sm:px-10';
 const arrow =
-  'flex size-10 items-center justify-center rounded-full border border-line text-[18px] leading-none';
+  'flex size-9 flex-none items-center justify-center rounded-full border border-line text-[18px] leading-none sm:size-10';
 
 // วงแหวน: r=54 → เส้นรอบวง 2πr
 const C = 2 * Math.PI * 54;
@@ -109,7 +109,7 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
       </span>
     </p>
 
-    <nav class="flex gap-2" aria-label="สลับมุมมอง">
+    <nav class="flex items-center gap-2" aria-label="เมนูหลัก">
       <a
         href="/"
         class="inline-flex min-h-9 items-center rounded-full border border-line px-4 text-[13px] font-medium text-muted"
@@ -122,6 +122,12 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
         class="inline-flex min-h-9 items-center rounded-full bg-accent px-4 text-[13px] font-medium text-on-accent"
       >
         ปฏิทิน
+      </a>
+      <a
+        href="/admin"
+        class="ml-auto inline-flex min-h-9 items-center gap-1 rounded-full border border-accent-ink/40 px-4 text-[13px] font-medium text-accent-ink"
+      >
+        <span aria-hidden="true">＋</span> เพิ่ม
       </a>
     </nav>
   </header>
@@ -143,7 +149,7 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
         <summary
           class="flex cursor-pointer list-none items-center gap-1.5 rounded-full px-3 py-1 marker:hidden hover:bg-field [&::-webkit-details-marker]:hidden"
         >
-          <h1 class="font-display text-[22px] leading-[1.45] text-text sm:text-[26px]">
+          <h1 class="font-display text-[19px] leading-[1.45] whitespace-nowrap text-text sm:text-[26px]">
             {monthName.format(asDate(month))}
           </h1>
           <span class="text-[11px] text-muted" aria-hidden="true">▾</span>

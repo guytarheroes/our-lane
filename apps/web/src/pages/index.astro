@@ -67,7 +67,7 @@ const heading = 'font-display text-pretty';
   </header>
 
   <main class={`${wrap} pt-8 pb-14 sm:pt-12 sm:pb-10`}>
-    <nav class="mb-8 flex gap-2 sm:mb-12" aria-label="สลับมุมมอง">
+    <nav class="mb-8 flex items-center gap-2 sm:mb-12" aria-label="เมนูหลัก">
       <a
         href="/"
         aria-current="page"
@@ -80,6 +80,12 @@ const heading = 'font-display text-pretty';
         class="inline-flex min-h-9 items-center rounded-full border border-line px-4 text-[13px] font-medium text-muted"
       >
         ปฏิทิน
+      </a>
+      <a
+        href="/admin"
+        class="ml-auto inline-flex min-h-9 items-center gap-1 rounded-full border border-accent-ink/40 px-4 text-[13px] font-medium text-accent-ink"
+      >
+        <span aria-hidden="true">＋</span> เพิ่ม
       </a>
     </nav>
 

@@ -165,6 +165,9 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 ฟอนต์: **Bai Jamjuree** ทั้ง `--font-display` (หัวข้อ น้ำหนัก 600) และ `--font-body` (เนื้อความ 400)
 ไฟล์อยู่ `public/fonts/` เสิร์ฟจาก origin เอง ไม่มี request ออกนอกเลย
 
+* nav แถวบนของ `/` และ `/calendar` มี 3 ปุ่ม: ไทม์ไลน์ · ปฏิทิน · ＋ เพิ่ม (ชิดขวา)
+  **ไม่ใช้ floating action button** — จะลอยทับรูปความทรงจำตลอดเวลา ขัดกับโทนสมุดภาพ
+  และ nav มีอยู่แล้ว ไม่ต้องมี element ลอยตัวใหม่ที่ต้องดูแล z-index กับ safe-area
 * `.pulse` — จุดเต้น 2.4s (`ml-pulse`) บน eyebrow และใน empty state
 * `.js .reveal` / `.js .reveal.in` — fade + เลื่อนขึ้น 24px
 * layout: `max-w-5xl` หน้า `/`, `max-w-2xl` หน้า `/admin`, `max-w-3xl` หน้า `/login`
