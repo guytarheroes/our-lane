@@ -42,3 +42,5 @@ const userColumns = new Set(db.prepare('PRAGMA table_info(user)').all().map((c) 
 if (!userColumns.has('token_version')) {
   db.exec('ALTER TABLE user ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0');
 }
+// เก็บเป็น hash เหมือนรหัสผ่าน ไม่เก็บตัวจริง — ใครอ่าน DB ได้ก็ยังกู้บัญชีไม่ได้
+if (!userColumns.has('recovery')) db.exec('ALTER TABLE user ADD COLUMN recovery TEXT');

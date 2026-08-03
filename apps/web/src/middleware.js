@@ -18,7 +18,7 @@ const HEADERS = {
 // allowlist ไม่ใช่ blocklist: หน้าใหม่ที่เพิ่มทีหลังจะถูกกันไว้เองโดยไม่ต้องจำมาแก้ที่นี่
 // หมายเหตุ: ไฟล์ static (dist/client — ทั้ง /_astro/* และของใน public/) ถูกเสิร์ฟโดย
 // handler ที่ทำงาน "ก่อน" middleware จึงไม่ผ่านด่านนี้เลย → อย่าวางอะไรที่เป็นความลับใน public/
-const PUBLIC = new Set(['/login', '/register', '/logout']);
+const PUBLIC = new Set(['/login', '/register', '/forgot', '/logout']);
 
 export const onRequest = defineMiddleware(async (ctx, next) => {
   const token = unsign(ctx.cookies.get('session')?.value);

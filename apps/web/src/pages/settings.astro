@@ -6,9 +6,12 @@ import { COOKIE, hash, sign, verify } from '../lib/auth.js';
 import { reset, tooMany } from '../lib/ratelimit.js';
 import { setSetting, siteSettings } from '../lib/settings.js';
 import { todayISO, validDate } from '../lib/calendar.js';
+import { generateCode, hashCode } from '../lib/recovery.js';
 
 const me = Astro.locals.user;
 let error = '';
+/** รหัสที่เพิ่งสร้าง — โชว์ในหน้าตอบกลับของ POST ครั้งนี้ครั้งเดียว ไม่เก็บที่ไหนอีก */
+let freshCode = '';
 
 if (Astro.request.method === 'POST') {
   const form = await Astro.request.formData();
@@ -53,6 +56,12 @@ if (Astro.request.method === 'POST') {
     }
   }
 
+  if (intent === 'recovery') {
+    freshCode = generateCode();
+    // เก็บเป็น hash เหมือนรหัสผ่าน — สร้างใหม่ทับของเดิม อันเก่าใช้ไม่ได้ทันที
+    db.prepare('UPDATE user SET recovery = ? WHERE id = ?').run(hashCode(freshCode), me.id);
+  }
+
   if (intent === 'site') {
     const coupleName = String(form.get('couple_name') ?? '').trim().slice(0, 80);
     const startDate = validDate(form.get('start_date'));
@@ -72,9 +81,17 @@ if (Astro.request.method === 'POST') {
 }
 
 const saved = Astro.url.searchParams.get('saved');
-const savedMessage = { profile: 'บันทึกชื่อแล้ว', password: 'เปลี่ยนรหัสผ่านแล้ว — อุปกรณ์อื่นถูกให้ออกจากระบบทั้งหมด', site: 'บันทึกค่าเว็บแล้ว' }[saved ?? ''];
+const savedMessage = {
+  profile: 'บันทึกชื่อแล้ว',
+  password: 'เปลี่ยนรหัสผ่านแล้ว — อุปกรณ์อื่นถูกให้ออกจากระบบทั้งหมด',
+  site: 'บันทึกค่าเว็บแล้ว',
+  recovered: 'ตั้งรหัสผ่านใหม่แล้ว — รหัสกู้คืนอันเดิมถูกใช้ไปแล้ว สร้างอันใหม่เก็บไว้ด้วย',
+}[saved ?? ''];
 
 const site = siteSettings();
+const hasRecovery = Boolean(
+  db.prepare('SELECT recovery FROM user WHERE id = ?').get(me.id)?.recovery,
+);
 
 const card =
   'grid gap-3.5 rounded-[24px] border border-line bg-surface p-5 shadow-[0_3px_10px_rgba(46,43,37,0.10)] sm:rounded-[26px] sm:p-[26px]';
@@ -153,6 +170,30 @@ const heading = 'font-display text-[17px] leading-[1.5] text-text';
           />
         </label>
         <button class={submit}>เปลี่ยนรหัสผ่าน</button>
+      </form>
+
+      <form method="post" class={card}>
+        <input type="hidden" name="intent" value="recovery" />
+        <h2 class={heading}>รหัสกู้คืน</h2>
+        {
+          freshCode ? (
+            <>
+              <p class="text-[12.5px] leading-[1.8] text-accent-ink">
+                จดเก็บไว้ตอนนี้เลย — ปิดหน้านี้แล้วจะดูอีกไม่ได้ ถ้าหายต้องสร้างใหม่
+              </p>
+              <p class="rounded-2xl border border-accent-ink/35 bg-accent/10 px-4 py-4 text-center font-mono text-[18px] tracking-[0.12em] text-accent-ink select-all">
+                {freshCode}
+              </p>
+            </>
+          ) : (
+            <p class="text-[12.5px] leading-[1.8] text-muted">
+              {hasRecovery
+                ? 'มีรหัสกู้คืนอยู่แล้ว ถ้าจำไม่ได้ว่าเก็บไว้ไหน สร้างใหม่ได้ — อันเก่าจะใช้ไม่ได้ทันที'
+                : 'ยังไม่มีรหัสกู้คืน ถ้าลืมรหัสผ่านตอนนี้จะเข้าเว็บไม่ได้เลย ต้องไปกู้จากเครื่องเซิร์ฟเวอร์'}
+            </p>
+          )
+        }
+        <button class={submit}>{hasRecovery || freshCode ? 'สร้างรหัสกู้คืนใหม่' : 'สร้างรหัสกู้คืน'}</button>
       </form>
 
       <form method="post" class={card}>
