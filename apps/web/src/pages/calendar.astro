@@ -273,13 +273,16 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
                 if (!first) {
                   return (
                     <td class="p-0">
+                      {/* ต้องใช้วิธีวัดความสูงแบบเดียวกับช่องที่มีรูป ไม่งั้นบน iOS สองแบบจะสูงไม่เท่ากัน */}
                       <div
                         class:list={[
-                          'flex aspect-square items-center justify-center rounded-lg bg-field text-[12px] text-muted sm:rounded-xl sm:text-[13px]',
+                          'relative h-0 w-full rounded-lg bg-field pt-[100%] sm:rounded-xl',
                           isToday && 'ring-2 ring-accent',
                         ]}
                       >
-                        {day}
+                        <span class="absolute inset-0 flex items-center justify-center text-[12px] text-muted sm:text-[13px]">
+                          {day}
+                        </span>
                       </div>
                     </td>
                   );
@@ -293,11 +296,16 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
                       href={`/#e${first.id}`}
                       aria-label={label}
                       class:list={[
-                        'relative block aspect-square overflow-hidden rounded-lg sm:rounded-xl',
+                        // pt-[100%] แทน aspect-square — Safari บน iOS คำนวณ aspect-ratio
+                        // และ height:100% ในบริบท table layout เพี้ยน ทำให้รูปไม่พอดีช่อง
+                        // (Chrome วัดได้ 46x46 ถูกหมด จึงไม่เจอตอนเทส)
+                        // padding-top เป็น % ของความกว้าง เป็นวิธีเก่าที่ทุกเบราว์เซอร์ตรงกันมาตลอด
+                        'relative block h-0 w-full overflow-hidden rounded-lg pt-[100%] sm:rounded-xl',
                         first.image ? 'bg-surface' : 'bg-alt-bg',
                         isToday && 'ring-2 ring-accent',
                       ]}
                     >
+                      {/* ครอปเน้นค่อนไปทางบน — รูปคนแนวตั้งถ้าครอปตรงกลางมักตัดหัวออกเหลือแต่ลำตัว */}
                       {first.image && (
                         <img
                           src={`/uploads/${first.image}?s=sm`}
@@ -305,7 +313,7 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
                           loading="lazy"
                           decoding="async"
                           onload="this.classList.remove('skeleton')"
-                          class="skeleton size-full object-cover"
+                          class="skeleton absolute inset-0 size-full object-cover object-[50%_25%]"
                         />
                       )}
                       <span
