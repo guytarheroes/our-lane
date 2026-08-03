@@ -193,6 +193,21 @@ select:hover {
   outline-offset: 2px;
 }
 
+/* placeholder ระหว่างรอรูปโหลด
+   ต้องถอด class ออกด้วย onload ไม่งั้น animation วิ่งอยู่ใต้รูปที่โหลดเสร็จแล้วตลอดเวลา
+   ปฏิทินเดือนหนึ่งมีได้ 31 ช่อง = 31 animation ที่มองไม่เห็นแต่กินแรงเครื่องจริง
+   ซึ่งสวนทางกับที่กำลังแก้เรื่องความเร็วบนมือถืออยู่พอดี */
+@keyframes ml-shimmer {
+  to { background-position: -200% 0; }
+}
+
+.skeleton {
+  background-color: var(--field);
+  background-image: linear-gradient(90deg, transparent 20%, var(--surface) 50%, transparent 80%);
+  background-size: 200% 100%;
+  animation: ml-shimmer 1.4s linear infinite;
+}
+
 @keyframes ml-pulse {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.35); opacity: 0.55; }
@@ -208,6 +223,7 @@ select:hover {
     transition: none;
   }
   .pulse { animation: none; }
+  .skeleton { animation: none; }
   button:active,
   .stars label:hover,
   .stars label:hover ~ label {

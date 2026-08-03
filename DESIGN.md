@@ -89,8 +89,18 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 `required` `minlength` `accept` ของ HTML ใช้ได้ปกติ
 
 **8. รูปที่ user อัปโหลดใช้ `<Image>` ของ `astro:assets` ไม่ได้** เพราะมันมาถึงหลัง build
-ต้องเป็น `<img src="/uploads/..." loading="lazy" decoding="async">` และต้องกันภาพกระโดด
-(ตอนนี้ใช้ `aspect-[4/3] object-cover` — เปลี่ยนสัดส่วนได้ แต่ต้องมี aspect ล็อกไว้)
+ต้องเขียน `<img>` เองและ **ต้องครบ 4 อย่างนี้เสมอ**:
+
+```html
+<img src="/uploads/xxx?s=sm" loading="lazy" decoding="async"
+     onload="this.classList.remove('skeleton')" class="skeleton …">
+```
+
+* `?s=sm` (320px, ช่องปฏิทิน/รูปย่อ) หรือ `?s=md` (1000px, การ์ดไทม์ไลน์) — **ห้ามลืม**
+  ไม่ใส่ = ส่งต้นฉบับหลาย MB ไปให้มือถือ ซึ่งเคยทำให้รูปไม่ขึ้นบน production มาแล้ว
+* `class="skeleton"` = placeholder ตอนรอโหลด และ `onload` ต้องมีคู่กันเพื่อถอดมันออก
+  ไม่งั้น animation วิ่งอยู่ใต้รูปที่โหลดเสร็จแล้วตลอด 31 ช่องบนปฏิทินคือ 31 animation ที่เปลืองเปล่า
+* ต้องกันภาพกระโดดด้วย aspect ที่ล็อกไว้ (`aspect-[4/3]` บนการ์ด, `aspect-square` บนช่องปฏิทิน)
 
 ---
 
