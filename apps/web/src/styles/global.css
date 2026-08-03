@@ -63,6 +63,31 @@
   --alt-muted: #852936b8;
 }
 
+/* พื้นลายทางของหน้าปฏิทิน — ฟ้าสลับครีม เป็นของตกแต่งล้วน ๆ
+   ตัวอักษรที่วางบนนี้ต้องเป็นเชอร์รี่เสมอ (ฟ้า/ครีม ตัดกันเองแค่ 1.36) */
+.stripes {
+  /* หน้านี้มีชุดสีของตัวเอง ไม่ตามธีม — พื้นฟ้าลายครีมบังคับให้หมึกเป็นเชอร์รี่เสมอ
+     ประกาศ token ใหม่ทั้งชุดแล้วปล่อยให้สืบทอดลงลูก (แพตเทิร์นเดียวกับ .bg-surface)
+     ต้องตั้ง color ด้วย ไม่งั้น element ที่ไม่มีคลาสสีจะสืบทอดค่าที่ <body> คำนวณไว้แล้ว */
+  --text: #852936;
+  --body: #852936;
+  --muted: #852936b8;
+  --line: #85293633;
+  --accent: #852936;
+  --accent-ink: #852936;
+  --on-accent: #faf7ea;
+  --alt-ink: #852936;
+  --alt-muted: #852936b8;
+  color: var(--body);
+
+  background-color: var(--alt-bg);
+  background-image: repeating-linear-gradient(
+    90deg,
+    #faf7ea 0 14px,
+    transparent 14px 34px
+  );
+}
+
 /* Bai Jamjuree (SIL OFL 1.1) — self-host ใน public/fonts/ ห้ามลิงก์ Google Fonts
    เพราะ origin อยู่วงในไม่มีเน็ตออก โหลดมาเฉพาะ subset thai + latin (76KB รวม 6 ไฟล์)
    font-display: swap = อ่านข้อความได้ทันทีด้วย system font ระหว่างรอฟอนต์โหลด */

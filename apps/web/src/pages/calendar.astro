@@ -95,7 +95,7 @@ const dot = 'mt-0.5 block size-1 rounded-full';
 
 const wrap = 'mx-auto w-full max-w-3xl px-5 sm:px-10';
 const arrow =
-  'flex size-9 flex-none items-center justify-center rounded-full border border-line text-[18px] leading-none sm:size-10';
+  'flex size-9 flex-none items-center justify-center rounded-full border border-alt-ink/35 bg-surface text-alt-ink text-[18px] leading-none sm:size-10';
 
 // วงแหวน: r=54 → เส้นรอบวง 2πr
 const C = 2 * Math.PI * 54;
@@ -104,6 +104,8 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
 
 <Base title={`ปฏิทิน · ${coupleName}`}>
   <Nav current="calendar" />
+
+  <div class="stripes min-h-dvh text-alt-ink">
 
   <header class={`${wrap} pt-8 pb-6 sm:pt-12`}>
   </header>
@@ -125,7 +127,7 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
         <summary
           class="flex cursor-pointer list-none items-center gap-1.5 rounded-full px-3 py-1 marker:hidden hover:bg-field [&::-webkit-details-marker]:hidden"
         >
-          <h1 class="font-display text-[19px] leading-[1.45] whitespace-nowrap text-text sm:text-[26px]">
+          <h1 class="font-display text-[19px] leading-[1.45] whitespace-nowrap text-alt-ink sm:text-[26px]">
             {monthName.format(asDate(month))}
           </h1>
           <span class="text-[11px] text-muted" aria-hidden="true">▾</span>
@@ -243,14 +245,16 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
     </div>
 
     {/* ปฏิทินคือข้อมูลตาราง — <table> ทำให้ screen reader อ่านหัวคอลัมน์ได้เองโดยไม่ต้องใส่ ARIA */}
-    <table class="mt-9 w-full table-fixed border-separate border-spacing-1 sm:border-spacing-2">
+    {/* แผงเชอร์รี่ครอบตาราง — ช่องเป็นครีม คู่นี้ contrast 8.26 สูงสุดใน palette */}
+    <div class="mt-9 rounded-[26px] bg-accent p-2.5 sm:rounded-[32px] sm:p-4">
+    <table class="w-full table-fixed border-separate border-spacing-1 sm:border-spacing-2">
       <thead>
         <tr>
           {
             weekdays.map((d) => (
               <th
                 scope="col"
-                class="pb-2 font-mono text-[10.5px] font-medium tracking-[0.08em] text-muted uppercase"
+                class="pb-2 font-mono text-[10.5px] font-medium tracking-[0.08em] text-on-accent uppercase"
               >
                 {d}
               </th>
@@ -276,11 +280,11 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
                       {/* ต้องใช้วิธีวัดความสูงแบบเดียวกับช่องที่มีรูป ไม่งั้นบน iOS สองแบบจะสูงไม่เท่ากัน */}
                       <div
                         class:list={[
-                          'relative h-0 w-full rounded-lg bg-field pt-[100%] sm:rounded-xl',
+                          'relative h-0 w-full rounded-xl bg-on-accent/70 pt-[100%] sm:rounded-2xl',
                           isToday && 'ring-2 ring-accent',
                         ]}
                       >
-                        <span class="absolute inset-0 flex items-center justify-center text-[12px] text-muted sm:text-[13px]">
+                        <span class="absolute inset-0 flex items-center justify-center text-[12px] text-accent/75 sm:text-[13px]">
                           {day}
                         </span>
                       </div>
@@ -300,8 +304,8 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
                         // และ height:100% ในบริบท table layout เพี้ยน ทำให้รูปไม่พอดีช่อง
                         // (Chrome วัดได้ 46x46 ถูกหมด จึงไม่เจอตอนเทส)
                         // padding-top เป็น % ของความกว้าง เป็นวิธีเก่าที่ทุกเบราว์เซอร์ตรงกันมาตลอด
-                        'relative block h-0 w-full overflow-hidden rounded-lg pt-[100%] sm:rounded-xl',
-                        first.image ? 'bg-surface' : 'bg-alt-bg',
+                        'relative block h-0 w-full overflow-hidden rounded-xl pt-[100%] sm:rounded-2xl',
+                        first.image ? 'bg-on-accent' : 'bg-on-accent',
                         isToday && 'ring-2 ring-accent',
                       ]}
                     >
@@ -320,13 +324,13 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
                         class:list={[
                           'absolute top-0.5 left-0.5 rounded-md px-1 font-mono text-[10px] leading-[1.5] sm:top-1 sm:left-1 sm:text-[11px]',
                           // รูปของ user สว่าง/มืดแค่ไหนก็ได้ — ต้องมีแถบทึบรองเลขวันเสมอ
-                          first.image ? 'bg-text/75 text-on-accent' : 'text-alt-muted',
+                          first.image ? 'bg-accent/80 text-on-accent' : 'text-accent',
                         ]}
                       >
                         {day}
                       </span>
                       {!first.image && (
-                        <span class="absolute inset-0 m-auto block size-1.5 rounded-full bg-alt" />
+                        <span class="absolute inset-0 m-auto block size-1.5 rounded-full bg-accent" />
                       )}
                       {first.rating && (
                         <span class="absolute bottom-0.5 left-0.5 rounded bg-text/75 px-1 font-mono text-[8.5px] leading-[1.7] text-on-accent sm:bottom-1 sm:left-1 sm:text-[9.5px]">
@@ -347,6 +351,7 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
         }
       </tbody>
     </table>
+    </div>
 
     {
       count === 0 && (
@@ -359,4 +364,5 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
       )
     }
   </main>
+  </div>
 </Base>
