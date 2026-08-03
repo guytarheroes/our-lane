@@ -4,7 +4,8 @@ import Nav from '../components/Nav.astro';
 import { db } from '../lib/db.js';
 import { COOKIE, hash, sign, verify } from '../lib/auth.js';
 import { reset, tooMany } from '../lib/ratelimit.js';
-import { setSetting, siteSettings } from '../lib/settings.js';
+import { accentColors, clearSetting, setSetting, siteSettings } from '../lib/settings.js';
+import { DEFAULT_ACCENT, THEME_BG, accentFits, contrast, validHex } from '../lib/color.js';
 import { todayISO, validDate } from '../lib/calendar.js';
 import { generateCode, hashCode } from '../lib/recovery.js';
 import { THEME_COOKIE, THEME_COOKIE_OPTIONS, isMobileUA, validTheme } from '../lib/theme.js';
@@ -62,6 +63,32 @@ if (Astro.request.method === 'POST') {
     return Astro.redirect('/settings?saved=theme', 303);
   }
 
+  if (intent === 'colors_reset') {
+    clearSetting('accent_light');
+    clearSetting('accent_dark');
+    return Astro.redirect('/settings?saved=colors', 303);
+  }
+
+  if (intent === 'colors') {
+    const light = validHex(form.get('accent_light'));
+    const dark = validHex(form.get('accent_dark'));
+
+    const okLight = light && accentFits(light, 'light');
+    const okDark = dark && accentFits(dark, 'dark');
+
+    if (!light || !dark) {
+      error = 'สีไม่ถูกต้อง';
+    } else if (!okLight.ok) {
+      error = `สีของโหมดสว่าง${okLight.reason}`;
+    } else if (!okDark.ok) {
+      error = `สีของโหมดมืด${okDark.reason}`;
+    } else {
+      setSetting('accent_light', light);
+      setSetting('accent_dark', dark);
+      return Astro.redirect('/settings?saved=colors', 303);
+    }
+  }
+
   if (intent === 'recovery') {
     freshCode = generateCode();
     // เก็บเป็น hash เหมือนรหัสผ่าน — สร้างใหม่ทับของเดิม อันเก่าใช้ไม่ได้ทันที
@@ -92,12 +119,14 @@ const savedMessage = {
   password: 'เปลี่ยนรหัสผ่านแล้ว — อุปกรณ์อื่นถูกให้ออกจากระบบทั้งหมด',
   site: 'บันทึกค่าเว็บแล้ว',
   theme: 'เปลี่ยนธีมแล้ว',
+  colors: 'บันทึกสีแล้ว',
   recovered: 'ตั้งรหัสผ่านใหม่แล้ว — รหัสกู้คืนอันเดิมถูกใช้ไปแล้ว สร้างอันใหม่เก็บไว้ด้วย',
 }[saved ?? ''];
 
 const site = siteSettings();
 const theme = validTheme(Astro.cookies.get(THEME_COOKIE)?.value);
 const onMobile = isMobileUA(Astro.request.headers.get('user-agent'));
+const accent = accentColors() ?? DEFAULT_ACCENT;
 
 // ไอคอนวาดเอง ไม่ใช้ icon library ตามกฎห้ามเพิ่ม dependency — 24x24 stroke ตาม currentColor
 const ICONS = {
@@ -183,6 +212,56 @@ const heading = 'font-display text-[17px] leading-[1.5] text-text';
               </button>
             ))
           }
+        </div>
+      </form>
+
+      <form method="post" class={card}>
+        <input type="hidden" name="intent" value="colors" />
+        <h2 class={heading}>สีหลัก</h2>
+        <p class="text-[12.5px] leading-[1.8] text-muted">
+          ใช้กับปุ่ม ลิงก์ หัวข้อ และจุดบนไทม์ไลน์ — ตั้งครั้งเดียวเห็นทั้งสองคน
+          <br />
+          ต้องเข้ม/สว่างพอที่จะอ่านออกบนพื้นของแต่ละโหมด ถ้าไม่ผ่านระบบจะบอกเหตุผล
+        </p>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label class={label}>
+            โหมดสว่าง
+            <span class="flex items-center gap-2.5">
+              <input
+                type="color"
+                name="accent_light"
+                value={accent.light}
+                class="h-11 w-14 flex-none cursor-pointer rounded-xl border border-line bg-field p-1"
+              />
+              <span class="font-mono text-[12px] text-muted">
+                {accent.light} · {contrast(accent.light, THEME_BG.light).toFixed(1)}:1
+              </span>
+            </span>
+          </label>
+          <label class={label}>
+            โหมดมืด
+            <span class="flex items-center gap-2.5">
+              <input
+                type="color"
+                name="accent_dark"
+                value={accent.dark}
+                class="h-11 w-14 flex-none cursor-pointer rounded-xl border border-line bg-field p-1"
+              />
+              <span class="font-mono text-[12px] text-muted">
+                {accent.dark} · {contrast(accent.dark, THEME_BG.dark).toFixed(1)}:1
+              </span>
+            </span>
+          </label>
+        </div>
+        <div class="flex flex-wrap items-center gap-4">
+          <button class={submit}>บันทึกสี</button>
+          <button
+            name="intent"
+            value="colors_reset"
+            class="text-[13px] text-muted underline underline-offset-4"
+          >
+            กลับไปใช้สีตั้งต้น
+          </button>
         </div>
       </form>
 
