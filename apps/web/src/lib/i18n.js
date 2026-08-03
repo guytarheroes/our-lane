@@ -54,6 +54,7 @@ const DICT = {
     'home.emptyCta': 'เขียนความทรงจำแรก',
     'home.footer': 'ยังเขียนต่ออยู่',
     'home.starsLabel': (n) => `ให้ ${n} จาก 5 ดาว`,
+    'home.postedBy': (who) => `ลงโดย ${who}`,
 
     'cal.title': 'ปฏิทิน',
     // Pics / Memo เป็นคำในดีไซน์ ใช้เหมือนกันทั้งสองภาษา ไม่แปล
@@ -207,6 +208,7 @@ const DICT = {
     'home.emptyCta': 'Write the first memory',
     'home.footer': 'Still being written',
     'home.starsLabel': (n) => `Rated ${n} out of 5`,
+    'home.postedBy': (who) => `Posted by ${who}`,
 
     'cal.title': 'Calendar',
     'cal.pics': 'Pics',

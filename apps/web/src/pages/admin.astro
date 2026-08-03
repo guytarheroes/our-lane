@@ -64,9 +64,11 @@ if (Astro.request.method === 'POST') {
           await removeThumbs(old?.image);
         }
       } else {
+        // author_id ใส่ตอน insert เท่านั้น — แก้ทีหลังต้องไม่เปลี่ยนว่าใครเป็นคนลง
+        // (อีกคนเข้ามาแก้ typo แล้วกลายเป็นเจ้าของความทรงจำนั้นแทนคงแปลก)
         db.prepare(
-          'INSERT INTO event (title, description, event_date, location, rating, image, image_w, image_h) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        ).run(title, description, eventDate, location, rating, image, size?.width ?? null, size?.height ?? null);
+          'INSERT INTO event (title, description, event_date, location, rating, image, image_w, image_h, author_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        ).run(title, description, eventDate, location, rating, image, size?.width ?? null, size?.height ?? null, Astro.locals.user?.id ?? null);
       }
       return Astro.redirect('/admin', 303);
     } catch (e) {

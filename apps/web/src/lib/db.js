@@ -40,6 +40,10 @@ if (!eventColumns.has('rating')) db.exec('ALTER TABLE event ADD COLUMN rating IN
 // เก็บสัดส่วนรูปไว้จองที่บนการ์ดก่อนรูปโหลด ไม่งั้นข้อความใต้รูปจะกระโดดตอนโหลดเสร็จ
 if (!eventColumns.has('image_w')) db.exec('ALTER TABLE event ADD COLUMN image_w INTEGER');
 if (!eventColumns.has('image_h')) db.exec('ALTER TABLE event ADD COLUMN image_h INTEGER');
+// ใครเป็นคนลง — **ไว้แสดงอย่างเดียว ไม่ใช่สิทธิ์** ทั้งสองคนยังแก้และลบของกันได้เหมือนเดิม
+// ไม่มี FK เพราะ 2 บัญชีนี้ไม่มีวันถูกลบ และของเก่าที่ลงไว้ก่อนมีคอลัมน์นี้เป็น NULL ตลอดไป
+// (ย้อนไปดูไม่ได้ว่าใครลง — เดาแล้วใส่ผิดแย่กว่าปล่อยว่าง)
+if (!eventColumns.has('author_id')) db.exec('ALTER TABLE event ADD COLUMN author_id INTEGER');
 
 const userColumns = new Set(db.prepare('PRAGMA table_info(user)').all().map((c) => c.name));
 if (!userColumns.has('token_version')) {

@@ -7,6 +7,7 @@ import { imageSize } from '../lib/thumb.js';
 import { siteSettings } from '../lib/settings.js';
 import Nav from '../components/Nav.astro';
 import { LANG_COOKIE, dict, localeOf, validLang } from '../lib/i18n.js';
+import { displayName, initialOf } from '../lib/avatar.js';
 
 const { coupleName, startDate } = siteSettings();
 const lang = validLang(Astro.cookies.get(LANG_COOKIE)?.value);
@@ -30,6 +31,11 @@ if (unsized.length) {
   }
 }
 
+// 2 บัญชี — โหลดทีเดียวแล้วเทียบในหน่วยความจำ ดีกว่า JOIN ต่อแถวหรือ query ต่อการ์ด
+const authors = new Map(
+  db.prepare('SELECT id, name, email FROM user').all().map((u) => [u.id, u]),
+);
+
 const long = new Intl.DateTimeFormat(locale, { dateStyle: 'long' });
 const medium = new Intl.DateTimeFormat(locale, { dateStyle: 'medium' });
 const day = (iso: string) => new Date(`${iso}T00:00:00`);
@@ -44,6 +50,9 @@ const seconds = Math.floor(elapsed / 1000) % 60;
 const wrap = 'mx-auto w-full max-w-5xl px-5 sm:px-12';
 const stamp = 'font-mono text-[10.5px] font-medium uppercase tracking-[0.1em] sm:text-[11px]';
 const heading = 'font-display text-pretty';
+// วงเดียวกับ avatar บน navbar แค่เล็กลง — คนเดียวกันต้องหน้าตาเหมือนกันทั้งเว็บ
+const avatar =
+  'flex size-7 flex-none items-center justify-center rounded-full border border-alt-muted/45 bg-alt-bg text-[11.5px] font-medium text-alt-ink';
 ---
 
 <Base title={coupleName}>
@@ -157,12 +166,20 @@ const heading = 'font-display text-pretty';
                       {e.description && (
                         <p class="mt-2 text-[14.5px] leading-[1.9] sm:mt-2.5 sm:text-[15px]">{e.description}</p>
                       )}
-                      {e.location && (
-                        <p class="mt-3 flex items-center gap-[7px] text-[12.5px] text-muted sm:text-[13px]">
-                          <span class="block size-[5px] rounded-full bg-alt" />
-                          {e.location}
-                        </p>
-                      )}
+                      <div class="mt-3 flex items-center gap-3">
+                        {e.location && (
+                          <p class="flex min-w-0 items-center gap-[7px] text-[12.5px] text-muted sm:text-[13px]">
+                            <span class="block size-[5px] flex-none rounded-full bg-alt" />
+                            <span class="truncate">{e.location}</span>
+                          </p>
+                        )}
+                        {authors.get(e.author_id) && (
+                          <span class={`${avatar} ml-auto`} title={displayName(authors.get(e.author_id))}>
+                            <span class="sr-only">{t('home.postedBy', displayName(authors.get(e.author_id)))}</span>
+                            <span aria-hidden="true">{initialOf(authors.get(e.author_id))}</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </article>
                 ) : e.description ? (
@@ -190,12 +207,20 @@ const heading = 'font-display text-pretty';
                     <p class="mt-2 text-[15px] leading-[1.95] text-soft-ink/85 sm:mt-3 sm:text-[17px]">
                       {e.description}
                     </p>
-                    {e.location && (
-                      <p class="mt-3.5 flex items-center gap-[7px] text-[12.5px] text-soft-muted sm:text-[13px]">
-                        <span class="block size-[5px] rounded-full bg-soft" />
-                        {e.location}
-                      </p>
-                    )}
+                    <div class="mt-3.5 flex items-center gap-3">
+                      {e.location && (
+                        <p class="flex min-w-0 items-center gap-[7px] text-[12.5px] text-soft-muted sm:text-[13px]">
+                          <span class="block size-[5px] flex-none rounded-full bg-soft" />
+                          <span class="truncate">{e.location}</span>
+                        </p>
+                      )}
+                      {authors.get(e.author_id) && (
+                        <span class={`${avatar} ml-auto`} title={displayName(authors.get(e.author_id))}>
+                          <span class="sr-only">{t('home.postedBy', displayName(authors.get(e.author_id)))}</span>
+                          <span aria-hidden="true">{initialOf(authors.get(e.author_id))}</span>
+                        </span>
+                      )}
+                    </div>
                   </article>
                 ) : (
                   <article
@@ -218,12 +243,20 @@ const heading = 'font-display text-pretty';
                         <span aria-hidden="true">{starsText(e.rating)}</span>
                       </p>
                     )}
-                    {e.location && (
-                      <p class="mt-3 flex items-center gap-[7px] text-[12.5px] text-muted sm:text-[13px]">
-                        <span class="block size-[5px] rounded-full bg-alt" />
-                        {e.location}
-                      </p>
-                    )}
+                    <div class="mt-3 flex items-center gap-3">
+                      {e.location && (
+                        <p class="flex min-w-0 items-center gap-[7px] text-[12.5px] text-muted sm:text-[13px]">
+                          <span class="block size-[5px] flex-none rounded-full bg-alt" />
+                          <span class="truncate">{e.location}</span>
+                        </p>
+                      )}
+                      {authors.get(e.author_id) && (
+                        <span class={`${avatar} ml-auto`} title={displayName(authors.get(e.author_id))}>
+                          <span class="sr-only">{t('home.postedBy', displayName(authors.get(e.author_id)))}</span>
+                          <span aria-hidden="true">{initialOf(authors.get(e.author_id))}</span>
+                        </span>
+                      )}
+                    </div>
                   </article>
                 )}
               </li>

@@ -1,6 +1,7 @@
 ---
 import { LANG_COOKIE, dict, validLang } from '../lib/i18n.js';
 import { ICON, SVG_PROPS } from '../lib/icons.js';
+import { initialOf } from '../lib/avatar.js';
 
 interface Props {
   current: 'timeline' | 'calendar' | 'admin' | 'settings';
@@ -17,8 +18,7 @@ const item = 'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left te
 const itemIco = 'size-4 flex-none opacity-70';
 const divide = 'my-1 block h-px bg-line';
 
-// ชื่อย่อบน avatar — ไม่มีชื่อก็เอาตัวแรกของอีเมล ไม่มีอะไรเลยก็ขีดกลาง
-const initial = (user?.name?.trim() || user?.email || '—').trim().charAt(0).toUpperCase();
+const initial = initialOf(user);
 ---
 
 <nav class="fixed inset-x-0 top-0 z-30 h-14 border-b border-line bg-bg" aria-label={t('nav.menu')}>
