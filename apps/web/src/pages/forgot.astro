@@ -5,6 +5,9 @@ import { db } from '../lib/db.js';
 import { COOKIE, hash, sign } from '../lib/auth.js';
 import { reset, tooMany } from '../lib/ratelimit.js';
 import { verifyCode } from '../lib/recovery.js';
+import { LANG_COOKIE, dict, validLang } from '../lib/i18n.js';
+
+const t = dict(validLang(Astro.cookies.get(LANG_COOKIE)?.value));
 
 if (Astro.locals.userId) return Astro.redirect('/');
 
@@ -20,11 +23,11 @@ if (Astro.request.method === 'POST') {
 
   // หน้านี้เปิดให้คนยังไม่ล็อกอิน — rate limit สำคัญกว่าที่อื่น
   if (tooMany(ip)) {
-    error = 'ลองผิดหลายครั้งเกินไป รออีก 15 นาทีแล้วค่อยลองใหม่';
+    error = t('err.rateLimit');
   } else if (next.length < 8) {
-    error = 'รหัสผ่านใหม่ต้องยาวอย่างน้อย 8 ตัวอักษร';
+    error = t('err.passwordShort');
   } else if (next !== confirm) {
-    error = 'รหัสผ่านใหม่กับช่องยืนยันไม่ตรงกัน';
+    error = t('err.passwordMismatch');
   } else {
     const user = db
       .prepare('SELECT id, recovery, token_version FROM user WHERE email = ?')
@@ -44,7 +47,7 @@ if (Astro.request.method === 'POST') {
     }
 
     // ข้อความเดียวกันทุกกรณี — ไม่บอกใบ้ว่าอีเมลไหนมีอยู่จริงหรือรหัสกู้คืนผิดตรงไหน
-    error = 'อีเมลหรือรหัสกู้คืนไม่ถูกต้อง';
+    error = t('err.badRecovery');
   }
 }
 
@@ -53,8 +56,8 @@ const input =
   'min-h-12 w-full rounded-2xl border border-line bg-field px-4 text-[15px] leading-[1.6] text-text outline-none focus:border-accent';
 ---
 
-<Base title="ลืมรหัสผ่าน · Our Memory Lane">
-  <AuthShell title="ลืมรหัสผ่าน" subtitle="ใช้รหัสกู้คืนที่เคยจดไว้ตอนตั้งค่าบัญชี">
+<Base title={`${t('auth.forgotHead')} · Our Memory Lane`}>
+  <AuthShell title={t('auth.forgotHead')} subtitle={t('auth.forgotSub')}>
     {
       error && (
         <p class="mt-6 rounded-2xl border border-accent-ink/35 bg-accent/10 px-4 py-3 text-[13.5px] text-accent-ink">
@@ -65,11 +68,11 @@ const input =
 
     <form method="post" class="mt-7 grid gap-4">
       <label class={label}>
-        อีเมล
+        {t('auth.email')}
         <input class={input} type="email" name="email" autocomplete="username" inputmode="email" required />
       </label>
       <label class={label}>
-        รหัสกู้คืน <span class="text-muted">(พิมพ์ตัวเล็กหรือไม่ใส่ขีดก็ได้)</span>
+        {t('set.recovery')} <span class="text-muted">{t('auth.codeHint')}</span>
         <input
           class={`${input} font-mono tracking-[0.08em]`}
           type="text"
@@ -82,22 +85,22 @@ const input =
         />
       </label>
       <label class={label}>
-        รหัสผ่านใหม่ <span class="text-muted">(อย่างน้อย 8 ตัว)</span>
+        {t('set.next')} <span class="text-muted">{t('set.minLen')}</span>
         <input class={input} type="password" name="next" minlength="8" autocomplete="new-password" required />
       </label>
       <label class={label}>
-        ยืนยันรหัสผ่านใหม่
+        {t('set.confirm')}
         <input class={input} type="password" name="confirm" minlength="8" autocomplete="new-password" required />
       </label>
       <button class="mt-1 min-h-12 rounded-full bg-accent px-6 text-[15.5px] font-medium text-on-accent">
-        ตั้งรหัสผ่านใหม่
+        {t('auth.resetSubmit')}
       </button>
     </form>
 
     <p class="mt-7 text-[13.5px] leading-[1.9] text-muted">
-      <a href="/login" class="font-medium text-accent-ink underline underline-offset-4">กลับไปเข้าสู่ระบบ</a>
+      <a href="/login" class="font-medium text-accent-ink underline underline-offset-4">{t('auth.backToLogin')}</a>
       <br />
-      ไม่มีรหัสกู้คืน? ให้อีกคนที่ยังล็อกอินอยู่ช่วยดูให้ หรือกู้จากเครื่องเซิร์ฟเวอร์
+      {t('auth.noCode')}
     </p>
   </AuthShell>
 </Base>

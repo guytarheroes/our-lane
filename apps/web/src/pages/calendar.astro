@@ -68,6 +68,10 @@ const years = [
 ].sort((a, b) => a - b);
 
 const yearLabel = new Intl.DateTimeFormat(locale, { year: 'numeric' });
+// ในตารางปีเอาแค่ตัวเลข ไม่เอาคำนำหน้าศักราช ("พ.ศ. 2569" ไม่พอดีช่อง)
+// ดึงจาก formatToParts แทนการ .replace('พ.ศ. ') — ไม่ต้องรู้ว่า locale ไหนเติมอะไรไว้ข้างหน้า
+const yearNumber = (y) =>
+  yearLabel.formatToParts(new Date(y, 0, 1)).find((part) => part.type === 'year')?.value ?? String(y);
 const monthShort = new Intl.DateTimeFormat(locale, { month: 'short' });
 const year = yearOf(month);
 
@@ -155,7 +159,7 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
                       aria-current={y === year ? 'page' : undefined}
                       class:list={[cell, y === year && 'bg-accent text-on-accent hover:bg-accent']}
                     >
-                      {yearLabel.format(new Date(y, 0, 1)).replace('พ.ศ. ', '')}
+                      {yearNumber(y)}
                       <span
                         class:list={[
                           dot,

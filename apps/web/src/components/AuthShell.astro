@@ -1,10 +1,13 @@
 ---
+import { LANG_COOKIE, dict, validLang } from '../lib/i18n.js';
+
 interface Props {
   title: string;
   subtitle?: string;
 }
 
 const { title, subtitle } = Astro.props;
+const t = dict(validLang(Astro.cookies.get(LANG_COOKIE)?.value));
 ---
 
 <div class="grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
@@ -21,13 +24,10 @@ const { title, subtitle } = Astro.props;
       </span>
     </p>
 
-    <p class="font-display max-w-[16ch] text-[44px] leading-[1.35] text-balance">
-      ที่เก็บวันธรรมดา<br />ที่ไม่ธรรมดา
-    </p>
+    {/* คีย์นี้มี <br /> อยู่ในตัว — จุดตัดบรรทัดคนละที่ระหว่างสองภาษา ตัดเองไม่ได้ */}
+    <p class="font-display max-w-[16ch] text-[44px] leading-[1.35] text-balance" set:html={t('app.brandLine')} />
 
-    <p class="max-w-[34ch] text-[14px] leading-[1.9] opacity-75">
-      เขียนไว้เพื่อจะได้อ่านซ้ำในอีกสิบปี
-    </p>
+    <p class="max-w-[34ch] text-[14px] leading-[1.9] opacity-75">{t('app.taglineShort')}</p>
   </aside>
 
   <main class="flex items-center justify-center px-5 py-12 sm:px-10 sm:py-16">

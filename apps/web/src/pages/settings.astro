@@ -8,9 +8,11 @@ import { setSetting, siteSettings } from '../lib/settings.js';
 import { todayISO, validDate } from '../lib/calendar.js';
 import { generateCode, hashCode } from '../lib/recovery.js';
 import { THEME_COOKIE, THEME_COOKIE_OPTIONS, validTheme } from '../lib/theme.js';
-import { LANG_COOKIE, LANG_COOKIE_OPTIONS, validLang } from '../lib/i18n.js';
+import { LANG_COOKIE, LANG_COOKIE_OPTIONS, dict, validLang } from '../lib/i18n.js';
 
 const me = Astro.locals.user;
+// อ่านภาษาก่อน POST — เปลี่ยนภาษาแล้ว redirect หน้าถัดไปจะได้ภาษาใหม่จาก cookie ที่เพิ่งเซ็ต
+const t = dict(validLang(Astro.cookies.get(LANG_COOKIE)?.value));
 let error = '';
 /** รหัสที่เพิ่งสร้าง — โชว์ในหน้าตอบกลับของ POST ครั้งนี้ครั้งเดียว ไม่เก็บที่ไหนอีก */
 let freshCode = '';
@@ -33,15 +35,15 @@ if (Astro.request.method === 'POST') {
 
     // กันเดารหัสเดิมรัว ๆ ด้วยโควตาชุดเดียวกับหน้า login
     if (tooMany(ip)) {
-      error = 'ลองผิดหลายครั้งเกินไป รออีก 15 นาทีแล้วค่อยลองใหม่';
+      error = t('err.rateLimit');
     } else if (next.length < 8) {
-      error = 'รหัสผ่านใหม่ต้องยาวอย่างน้อย 8 ตัวอักษร';
+      error = t('err.passwordShort');
     } else if (next !== confirm) {
-      error = 'รหัสผ่านใหม่กับช่องยืนยันไม่ตรงกัน';
+      error = t('err.passwordMismatch');
     } else {
       const row = db.prepare('SELECT password FROM user WHERE id = ?').get(me.id);
       if (!row || !verify(current, row.password)) {
-        error = 'รหัสผ่านปัจจุบันไม่ถูกต้อง';
+        error = t('err.passwordWrong');
       } else {
         // บวก token_version = cookie ทุกใบที่ออกไปก่อนหน้านี้ใช้ไม่ได้ทันที
         const version = me.token_version + 1;
@@ -79,11 +81,11 @@ if (Astro.request.method === 'POST') {
     const startDate = validDate(form.get('start_date'));
 
     if (!coupleName) {
-      error = 'ชื่อบนหน้าแรกว่างไม่ได้';
+      error = t('err.nameEmpty');
     } else if (!startDate) {
-      error = 'วันเริ่มนับไม่ถูกต้อง';
+      error = t('err.badStartDate');
     } else if (startDate > todayISO()) {
-      error = 'วันเริ่มนับอยู่ในอนาคตไม่ได้';
+      error = t('err.futureStartDate');
     } else {
       setSetting('couple_name', coupleName);
       setSetting('start_date', startDate);
@@ -93,26 +95,21 @@ if (Astro.request.method === 'POST') {
 }
 
 const saved = Astro.url.searchParams.get('saved');
-const savedMessage = {
-  profile: 'บันทึกชื่อแล้ว',
-  password: 'เปลี่ยนรหัสผ่านแล้ว — อุปกรณ์อื่นถูกให้ออกจากระบบทั้งหมด',
-  site: 'บันทึกค่าเว็บแล้ว',
-  theme: 'เปลี่ยนธีมแล้ว',
-  lang: 'เปลี่ยนภาษาแล้ว',
-  recovered: 'ตั้งรหัสผ่านใหม่แล้ว — รหัสกู้คืนอันเดิมถูกใช้ไปแล้ว สร้างอันใหม่เก็บไว้ด้วย',
-}[saved ?? ''];
+// allowlist ไม่ใช่ t(`saved.${saved}`) เปล่า ๆ — ไม่งั้น ?saved=อะไรก็ได้ จะสะท้อนกลับมาบนหน้า
+const savedMessage = ['profile', 'password', 'site', 'theme', 'lang', 'recovered'].includes(saved ?? '')
+  ? t(`saved.${saved}`)
+  : '';
 
 const site = siteSettings();
 const theme = validTheme(Astro.cookies.get(THEME_COOKIE)?.value);
 const lang = validLang(Astro.cookies.get(LANG_COOKIE)?.value);
 
 // ไอคอนวาดเอง ไม่ใช้ icon library ตามกฎห้ามเพิ่ม dependency — 24x24 stroke ตาม currentColor
-// ไอคอนวาดเอง ไม่ใช้ icon library ตามกฎห้ามเพิ่ม dependency — 24x24 stroke ตาม currentColor
 const themeOptions = [
-  { value: 'normal', label: 'ปกติ', icon: '<circle cx="12" cy="12" r="8.5"/>' },
+  { value: 'normal', label: t('set.themeNormal'), icon: '<circle cx="12" cy="12" r="8.5"/>' },
   {
     value: 'invert',
-    label: 'กลับสี',
+    label: t('set.themeInvert'),
     icon: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/>',
   },
 ];
@@ -129,11 +126,11 @@ const submit = 'min-h-11 justify-self-start rounded-full bg-accent px-6 text-[14
 const heading = 'font-display text-[17px] leading-[1.5] text-text';
 ---
 
-<Base title="ตั้งค่า">
+<Base title={t('set.title')}>
   <Nav current="settings" />
 
   <main class="mx-auto w-full max-w-2xl px-5 py-7 sm:px-9 sm:py-9">
-    <h1 class="mt-6 mb-4 font-display text-[22px] leading-[1.45] text-text sm:text-[24px]">ตั้งค่า</h1>
+    <h1 class="mt-6 mb-4 font-display text-[22px] leading-[1.45] text-text sm:text-[24px]">{t('set.title')}</h1>
 
     {
       savedMessage && (
@@ -153,7 +150,7 @@ const heading = 'font-display text-[17px] leading-[1.5] text-text';
     <div class="grid gap-5">
       <form method="post" class={card}>
         <input type="hidden" name="intent" value="lang" />
-        <h2 class={heading}>ภาษา / Language</h2>
+        <h2 class={heading}>{t('set.lang')}</h2>
         <div class="flex gap-1.5 rounded-full border border-line bg-field p-1">
           {
             [
@@ -178,11 +175,8 @@ const heading = 'font-display text-[17px] leading-[1.5] text-text';
 
       <form method="post" class={card}>
         <input type="hidden" name="intent" value="theme" />
-        <h2 class={heading}>ธีม</h2>
-        <p class="text-[12.5px] leading-[1.8] text-muted">
-          palette มี 4 สีและมีแค่ 3 คู่ที่อ่านออก ทุกคู่ต้องมีสีเชอร์รี่อยู่ด้วย
-          ธีมจึงเป็นการสลับว่าเชอร์รี่เป็นพื้นหรือเป็นตัวหนังสือ · จำไว้ในเบราว์เซอร์นี้
-        </p>
+        <h2 class={heading}>{t('set.theme')}</h2>
+        <p class="text-[12.5px] leading-[1.8] text-muted">{t('set.themeNote')}</p>
         {/* ปุ่มแต่ละอันส่งค่าของตัวเองผ่าน name/value ของ <button> กดทีเดียวจบ
             ไม่ต้องมีปุ่มบันทึกแยก และไม่ต้องใช้ JS สักบรรทัด */}
         <div class="flex gap-1.5 rounded-full border border-line bg-field p-1">
@@ -217,29 +211,29 @@ const heading = 'font-display text-[17px] leading-[1.5] text-text';
 
       <form method="post" class={card}>
         <input type="hidden" name="intent" value="profile" />
-        <h2 class={heading}>บัญชี</h2>
+        <h2 class={heading}>{t('set.account')}</h2>
         <p class="text-[12.5px] text-muted">
-          อีเมล <span class="font-mono text-body">{me?.email}</span> — เปลี่ยนไม่ได้
+          {t('set.email')} <span class="font-mono text-body">{me?.email}</span> — {t('set.emailFixed')}
         </p>
         <label class={label}>
-          ชื่อ <span class="text-muted">(ใช้เป็นตัวย่อบนไอคอนมุมขวาบน)</span>
+          {t('set.name')} <span class="text-muted">{t('set.nameNote')}</span>
           <input class={input} type="text" name="name" value={me?.name ?? ''} maxlength="60" />
         </label>
-        <button class={submit}>บันทึกชื่อ</button>
+        <button class={submit}>{t('set.saveName')}</button>
       </form>
 
       <form method="post" class={card}>
         <input type="hidden" name="intent" value="password" />
-        <h2 class={heading}>เปลี่ยนรหัสผ่าน</h2>
+        <h2 class={heading}>{t('set.password')}</h2>
         <p class="text-[12.5px] leading-[1.8] text-muted">
-          เปลี่ยนแล้วอุปกรณ์อื่นที่ค้างล็อกอินอยู่จะถูกให้ออกจากระบบทั้งหมด เครื่องนี้ยังอยู่ต่อ
+          {t('set.passwordNote')}
         </p>
         <label class={label}>
-          รหัสผ่านปัจจุบัน
+          {t('set.current')}
           <input class={input} type="password" name="current" autocomplete="current-password" required />
         </label>
         <label class={label}>
-          รหัสผ่านใหม่ <span class="text-muted">(อย่างน้อย 8 ตัว)</span>
+          {t('set.next')} <span class="text-muted">{t('set.minLen')}</span>
           <input
             class={input}
             type="password"
@@ -250,7 +244,7 @@ const heading = 'font-display text-[17px] leading-[1.5] text-text';
           />
         </label>
         <label class={label}>
-          ยืนยันรหัสผ่านใหม่
+          {t('set.confirm')}
           <input
             class={input}
             type="password"
@@ -260,17 +254,17 @@ const heading = 'font-display text-[17px] leading-[1.5] text-text';
             required
           />
         </label>
-        <button class={submit}>เปลี่ยนรหัสผ่าน</button>
+        <button class={submit}>{t('set.password')}</button>
       </form>
 
       <form method="post" class={card}>
         <input type="hidden" name="intent" value="recovery" />
-        <h2 class={heading}>รหัสกู้คืน</h2>
+        <h2 class={heading}>{t('set.recovery')}</h2>
         {
           freshCode ? (
             <>
               <p class="text-[12.5px] leading-[1.8] text-accent-ink">
-                จดเก็บไว้ตอนนี้เลย — ปิดหน้านี้แล้วจะดูอีกไม่ได้ ถ้าหายต้องสร้างใหม่
+                {t('set.recoveryFresh')}
               </p>
               <p class="rounded-2xl border border-accent-ink/35 bg-accent/10 px-4 py-4 text-center font-mono text-[18px] tracking-[0.12em] text-accent-ink select-all">
                 {freshCode}
@@ -278,20 +272,18 @@ const heading = 'font-display text-[17px] leading-[1.5] text-text';
             </>
           ) : (
             <p class="text-[12.5px] leading-[1.8] text-muted">
-              {hasRecovery
-                ? 'มีรหัสกู้คืนอยู่แล้ว ถ้าจำไม่ได้ว่าเก็บไว้ไหน สร้างใหม่ได้ — อันเก่าจะใช้ไม่ได้ทันที'
-                : 'ยังไม่มีรหัสกู้คืน ถ้าลืมรหัสผ่านตอนนี้จะเข้าเว็บไม่ได้เลย ต้องไปกู้จากเครื่องเซิร์ฟเวอร์'}
+              {hasRecovery ? t('set.recoveryHas') : t('set.recoveryNone')}
             </p>
           )
         }
-        <button class={submit}>{hasRecovery || freshCode ? 'สร้างรหัสกู้คืนใหม่' : 'สร้างรหัสกู้คืน'}</button>
+        <button class={submit}>{hasRecovery || freshCode ? t('set.recoveryNew') : t('set.recoveryCreate')}</button>
       </form>
 
       <form method="post" class={card}>
         <input type="hidden" name="intent" value="site" />
-        <h2 class={heading}>ค่าเว็บ</h2>
+        <h2 class={heading}>{t('set.site')}</h2>
         <label class={label}>
-          ชื่อบนหน้าแรก
+          {t('set.siteName')}
           <input
             class={input}
             type="text"
@@ -302,10 +294,10 @@ const heading = 'font-display text-[17px] leading-[1.5] text-text';
           />
         </label>
         <label class={label}>
-          วันเริ่มนับ <span class="text-muted">(ตัวนับวันบนหน้าแรกนับจากวันนี้)</span>
+          {t('set.startDate')} <span class="text-muted">{t('set.startDateNote')}</span>
           <input class={input} type="date" name="start_date" value={site.startDate} required />
         </label>
-        <button class={submit}>บันทึกค่าเว็บ</button>
+        <button class={submit}>{t('set.saveSite')}</button>
       </form>
     </div>
   </main>

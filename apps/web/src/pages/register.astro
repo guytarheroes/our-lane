@@ -4,6 +4,9 @@ import AuthShell from '../components/AuthShell.astro';
 import { db } from '../lib/db.js';
 import { COOKIE, hash, sign } from '../lib/auth.js';
 import { reset, tooMany } from '../lib/ratelimit.js';
+import { LANG_COOKIE, dict, validLang } from '../lib/i18n.js';
+
+const t = dict(validLang(Astro.cookies.get(LANG_COOKIE)?.value));
 
 if (Astro.locals.userId) return Astro.redirect('/');
 
@@ -22,11 +25,11 @@ if (Astro.request.method === 'POST') {
   const ip = Astro.clientAddress || 'unknown';
 
   if (tooMany(ip)) {
-    error = 'ลองหลายครั้งเกินไป รออีก 15 นาทีแล้วค่อยลองใหม่';
+    error = t('err.rateLimit');
   } else if (!canRegister) {
-    error = 'สมัครสมาชิกครบ 2 คนแล้ว';
+    error = t('err.registerFull');
   } else if (!email.includes('@') || password.length < 8) {
-    error = 'ต้องกรอกอีเมลให้ถูกต้อง และรหัสผ่านอย่างน้อย 8 ตัวอักษร';
+    error = t('err.badEmailOrPassword');
   } else {
     try {
       const { lastInsertRowid } = db
@@ -37,7 +40,7 @@ if (Astro.request.method === 'POST') {
       return Astro.redirect('/');
     } catch {
       // UNIQUE constraint บนคอลัมน์ email เป็นตัวกันซ้ำจริง ไม่ใช่การเช็คก่อน insert
-      error = 'อีเมลนี้ถูกใช้แล้ว';
+      error = t('err.emailTaken');
     }
   }
 }
@@ -47,12 +50,10 @@ const input =
   'min-h-12 w-full rounded-2xl border border-line bg-field px-4 text-[15px] leading-[1.6] text-text outline-none focus:border-accent';
 ---
 
-<Base title="สมัครสมาชิก · Our Memory Lane">
+<Base title={`${t('auth.register')} · Our Memory Lane`}>
   <AuthShell
-    title={canRegister ? 'สร้างบัญชี' : 'สมัครครบแล้ว'}
-    subtitle={canRegister
-      ? `เว็บนี้เปิดให้แค่ 2 คน — เหลืออีก ${2 - n} ที่`
-      : 'มีครบ 2 บัญชีแล้ว เข้าสู่ระบบด้วยบัญชีที่มีอยู่ได้เลย'}
+    title={canRegister ? t('auth.createAccount') : t('auth.registerFull')}
+    subtitle={canRegister ? t('auth.registerSub', 2 - n) : t('auth.registerFullSub')}
   >
     {
       error && (
@@ -66,11 +67,11 @@ const input =
       canRegister && (
         <form method="post" class="mt-7 grid gap-4">
           <label class={label}>
-            ชื่อ <span class="text-muted">(ไม่ใส่ก็ได้)</span>
+            {t('auth.name')} <span class="text-muted">{t('auth.optional')}</span>
             <input class={input} type="text" name="name" autocomplete="name" maxlength="60" />
           </label>
           <label class={label}>
-            อีเมล
+            {t('auth.email')}
             <input
               class={input}
               type="email"
@@ -81,7 +82,7 @@ const input =
             />
           </label>
           <label class={label}>
-            รหัสผ่าน <span class="text-muted">(อย่างน้อย 8 ตัว)</span>
+            {t('auth.password')} <span class="text-muted">{t('set.minLen')}</span>
             <input
               class={input}
               type="password"
@@ -92,16 +93,16 @@ const input =
             />
           </label>
           <button class="mt-1 min-h-12 rounded-full bg-accent px-6 text-[15.5px] font-medium text-on-accent">
-            สร้างบัญชี
+            {t('auth.createAccount')}
           </button>
         </form>
       )
     }
 
     <p class="mt-7 text-[13.5px] text-muted">
-      มีบัญชีอยู่แล้ว?{' '}
+      {t('auth.haveAccount')}{' '}
       <a href="/login" class="font-medium text-accent-ink underline underline-offset-4">
-        เข้าสู่ระบบ
+        {t('auth.login')}
       </a>
     </p>
   </AuthShell>

@@ -4,6 +4,9 @@ import AuthShell from '../components/AuthShell.astro';
 import { db } from '../lib/db.js';
 import { COOKIE, sign, verify } from '../lib/auth.js';
 import { reset, tooMany } from '../lib/ratelimit.js';
+import { LANG_COOKIE, dict, validLang } from '../lib/i18n.js';
+
+const t = dict(validLang(Astro.cookies.get(LANG_COOKIE)?.value));
 
 if (Astro.locals.userId) return Astro.redirect('/');
 
@@ -20,9 +23,9 @@ if (Astro.request.method === 'POST') {
   const ip = Astro.clientAddress || 'unknown';
 
   if (tooMany(ip)) {
-    error = 'ลองผิดหลายครั้งเกินไป รออีก 15 นาทีแล้วค่อยลองใหม่';
+    error = t('err.rateLimit');
   } else if (!email.includes('@') || password.length < 8) {
-    error = 'ต้องกรอกอีเมลให้ถูกต้อง และรหัสผ่านอย่างน้อย 8 ตัวอักษร';
+    error = t('err.badEmailOrPassword');
   } else {
     const user = db
       .prepare('SELECT id, password, token_version FROM user WHERE email = ?')
@@ -33,7 +36,7 @@ if (Astro.request.method === 'POST') {
       return Astro.redirect('/');
     }
     // ข้อความเดียวกันทั้งกรณีไม่มีอีเมลนี้และรหัสผิด — ไม่บอกใบ้ว่าอีเมลไหนมีอยู่จริง
-    error = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+    error = t('err.badCredentials');
   }
 }
 
@@ -42,8 +45,8 @@ const input =
   'min-h-12 w-full rounded-2xl border border-line bg-field px-4 text-[15px] leading-[1.6] text-text outline-none focus:border-accent';
 ---
 
-<Base title="เข้าสู่ระบบ · Our Memory Lane">
-  <AuthShell title="ยินดีต้อนรับกลับ" subtitle="เข้าสู่ระบบเพื่อดูความทรงจำของเรา">
+<Base title={`${t('auth.login')} · Our Memory Lane`}>
+  <AuthShell title={t('auth.loginHead')} subtitle={t('auth.loginSub')}>
     {
       error && (
         <p class="mt-6 rounded-2xl border border-accent-ink/35 bg-accent/10 px-4 py-3 text-[13.5px] text-accent-ink">
@@ -54,7 +57,7 @@ const input =
 
     <form method="post" class="mt-7 grid gap-4">
       <label class={label}>
-        อีเมล
+        {t('auth.email')}
         <input
           class={input}
           type="email"
@@ -65,7 +68,7 @@ const input =
         />
       </label>
       <label class={label}>
-        รหัสผ่าน
+        {t('auth.password')}
         <input
           class={input}
           type="password"
@@ -75,21 +78,21 @@ const input =
         />
       </label>
       <button class="mt-1 min-h-12 rounded-full bg-accent px-6 text-[15.5px] font-medium text-on-accent">
-        เข้าสู่ระบบ
+        {t('auth.login')}
       </button>
       <a href="/forgot" class="justify-self-center text-[13px] text-muted underline underline-offset-4">
-        ลืมรหัสผ่าน?
+        {t('auth.forgot')}
       </a>
     </form>
 
     {
       canRegister && (
         <p class="mt-7 text-[13.5px] text-muted">
-          ยังไม่มีบัญชี?{' '}
+          {t('auth.noAccount')}{' '}
           <a href="/register" class="font-medium text-accent-ink underline underline-offset-4">
-            สมัครสมาชิก
+            {t('auth.register')}
           </a>{' '}
-          (เหลือ {2 - n} ที่)
+          {t('auth.seatsLeft', 2 - n)}
         </p>
       )
     }
