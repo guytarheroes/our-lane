@@ -131,6 +131,23 @@ select:hover {
   border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
 }
 
+/* form control มี min-width โดยปริยายตามเนื้อหาของมันเอง พออยู่ใน flex/grid
+   มันจะดัน track ให้กว้างกว่าที่ตั้งไว้แล้วทะลุกรอบออกไป
+   `min-width: 0` ตัดที่ต้นตอ ครอบทุก control ในเว็บทีเดียว */
+input,
+textarea,
+select {
+  min-width: 0;
+}
+
+/* iOS Safari ยังยึดความกว้างตามข้อความข้างใน (เช่น "3 ส.ค. 2569" + ปุ่มปฏิทิน)
+   ไม่สน width:100% จนกว่าจะถอด appearance ของ OS ออก — เจอบนเครื่องจริง
+   Chrome เดสก์ท็อปเรนเดอร์ช่องนี้แคบกว่ามากจึงไม่เจอตอนเทส */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 /* `.js` ถูกใส่ด้วย inline script ใน <head> ของ Base.astro
    ถ้าลบ gate นี้ทิ้ง หน้าเว็บจะว่างเปล่าทันทีเมื่อ JS พัง */
 .js .reveal {

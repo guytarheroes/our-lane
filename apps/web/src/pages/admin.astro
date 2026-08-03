@@ -4,7 +4,7 @@ import { db, UPLOAD_DIR } from '../lib/db.js';
 import { removeImage, saveImage } from '../lib/upload.js';
 import { removeThumbs } from '../lib/thumb.js';
 import { parseRating } from '../lib/event.js';
-import { validDate } from '../lib/calendar.js';
+import { todayISO, validDate } from '../lib/calendar.js';
 import Nav from '../components/Nav.astro';
 
 let error = '';
@@ -94,7 +94,15 @@ const hatch =
       <div class="grid gap-3.5 sm:grid-cols-[180px_1fr]">
         <label class={label}>
           วันที่
-          <input class={input} type="date" name="event_date" value={editing?.event_date} required />
+          {/* iOS แสดงวันนี้ในช่องว่างจนดูเหมือนกรอกแล้ว แต่ value ยังว่าง กดบันทึกจะโดน error งง ๆ
+            ใส่วันนี้เป็นค่าตั้งต้นไปเลย ตรงกับที่ตาเห็นและเป็นค่าที่ใช้บ่อยที่สุดอยู่แล้ว */}
+        <input
+          class={input}
+          type="date"
+          name="event_date"
+          value={editing?.event_date ?? todayISO()}
+          required
+        />
         </label>
         <label class={label}>
           สถานที่

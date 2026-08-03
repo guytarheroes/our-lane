@@ -78,17 +78,22 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 * `#counter` มีจำนวนวัน render มาจาก server อยู่แล้ว JS แค่มาเขียนทับให้ละเอียดขึ้น
   ห้ามทำให้ element นี้ว่างตอนโหลด
 
-**5. animation ทุกตัวต้องถูกปิดใน `@media (prefers-reduced-motion: reduce)`** ท้าย `global.css`
+**5. เทสบน iOS Safari จริงก่อนปิดงานที่แตะฟอร์ม** Chrome เดสก์ท็อปเรนเดอร์
+`input[type=date]` แคบกว่า WebKit มาก บั๊กที่ช่องวันที่ทะลุกรอบการ์ดบนมือถือ
+จึงไม่โผล่ตอนเทสด้วย CDP เลย — `input,textarea,select { min-width: 0 }` กับ
+`input[type=date] { appearance: none }` ใน `global.css` คือตัวกัน **อย่าถอดออก**
+
+**6. animation ทุกตัวต้องถูกปิดใน `@media (prefers-reduced-motion: reduce)`** ท้าย `global.css`
 เพิ่ม keyframes ใหม่ = เพิ่มบรรทัดปิดในบล็อกนั้นด้วยเสมอ
 
-**6. ห้ามใส่ `will-change` ค้างไว้ใน CSS** เคยทำแล้วมันดันทุก element ขึ้น compositor layer ถาวร
+**7. ห้ามใส่ `will-change` ค้างไว้ใน CSS** เคยทำแล้วมันดันทุก element ขึ้น compositor layer ถาวร
 ถ้าจำเป็นจริงให้ใส่/ถอดด้วย JS เฉพาะช่วงที่ animate
 
-**7. ฟอร์มต้องเป็น `<form method="post">` ธรรมดา** ห้ามเปลี่ยนเป็น `fetch` / client-side validation
+**8. ฟอร์มต้องเป็น `<form method="post">` ธรรมดา** ห้ามเปลี่ยนเป็น `fetch` / client-side validation
 ที่บล็อกการ submit — POST ถูก handle ใน frontmatter ของหน้าเดียวกันแล้ว redirect 303 กลับ
 `required` `minlength` `accept` ของ HTML ใช้ได้ปกติ
 
-**8. รูปที่ user อัปโหลดใช้ `<Image>` ของ `astro:assets` ไม่ได้** เพราะมันมาถึงหลัง build
+**9. รูปที่ user อัปโหลดใช้ `<Image>` ของ `astro:assets` ไม่ได้** เพราะมันมาถึงหลัง build
 ต้องเขียน `<img>` เองและ **ต้องครบ 4 อย่างนี้เสมอ**:
 
 ```html
