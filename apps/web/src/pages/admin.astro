@@ -2,6 +2,9 @@
 import Base from '../layouts/Base.astro';
 import { db, UPLOAD_DIR } from '../lib/db.js';
 import { removeImage, saveImage } from '../lib/upload.js';
+import { parseRating } from '../lib/event.js';
+import { validDate } from '../lib/calendar.js';
+import Nav from '../components/Nav.astro';
 
 let error = '';
 
@@ -22,8 +25,9 @@ if (Astro.request.method === 'POST') {
   const eventDate = String(form.get('event_date') ?? '');
   const description = String(form.get('description') ?? '').trim();
   const location = String(form.get('location') ?? '').trim() || null;
+  const rating = parseRating(form.get('rating'));
 
-  if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) {
+  if (!title || !validDate(eventDate)) {
     error = 'ต้องมีหัวข้อและวันที่';
   } else {
     try {
@@ -31,13 +35,13 @@ if (Astro.request.method === 'POST') {
       if (id) {
         const old = db.prepare('SELECT image FROM event WHERE id = ?').get(id);
         db.prepare(
-          'UPDATE event SET title = ?, description = ?, event_date = ?, location = ?, image = COALESCE(?, image) WHERE id = ?',
-        ).run(title, description, eventDate, location, image, id);
+          'UPDATE event SET title = ?, description = ?, event_date = ?, location = ?, rating = ?, image = COALESCE(?, image) WHERE id = ?',
+        ).run(title, description, eventDate, location, rating, image, id);
         if (image) await removeImage(old?.image, UPLOAD_DIR);
       } else {
         db.prepare(
-          'INSERT INTO event (title, description, event_date, location, image) VALUES (?, ?, ?, ?, ?)',
-        ).run(title, description, eventDate, location, image);
+          'INSERT INTO event (title, description, event_date, location, rating, image) VALUES (?, ?, ?, ?, ?, ?)',
+        ).run(title, description, eventDate, location, rating, image);
       }
       return Astro.redirect('/admin', 303);
     } catch (e) {
@@ -60,18 +64,12 @@ const hatch =
 ---
 
 <Base title={editing ? 'แก้ความทรงจำ' : 'เพิ่มความทรงจำ'}>
+  <Nav current="admin" />
+
   <main class="mx-auto w-full max-w-2xl px-5 py-7 sm:px-9 sm:py-9">
-    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <h1 class="min-w-0 font-display text-[22px] leading-[1.45] text-text sm:text-[24px]">
-        {editing ? 'แก้ความทรงจำ' : 'เพิ่มความทรงจำ'}
-      </h1>
-      <div class="flex items-center gap-2.5">
-        <a href="/" class={`${pill} border-line text-muted`}>ดู Timeline</a>
-        <form method="post" action="/logout">
-          <button class={`${pill} border-line text-muted`}>ออกจากระบบ</button>
-        </form>
-      </div>
-    </div>
+    <h1 class="mt-6 mb-4 font-display text-[22px] leading-[1.45] text-text sm:text-[24px]">
+      {editing ? 'แก้ความทรงจำ' : 'เพิ่มความทรงจำ'}
+    </h1>
 
     {
       error && (
@@ -88,7 +86,7 @@ const hatch =
     >
       {editing && <input type="hidden" name="id" value={editing.id} />}
 
-      <div class="grid grid-cols-2 gap-3 sm:grid-cols-[180px_1fr] sm:gap-3.5">
+      <div class="grid gap-3.5 sm:grid-cols-[180px_1fr]">
         <label class={label}>
           วันที่
           <input class={input} type="date" name="event_date" value={editing?.event_date} required />
@@ -116,6 +114,32 @@ const hatch =
           required
         />
       </label>
+
+      <fieldset class="grid gap-2 text-[12.5px] leading-[1.8]">
+        <legend class="mb-1">ให้ดาว</legend>
+        <div class="flex items-center gap-4">
+          <div class="stars">
+            {
+              [5, 4, 3, 2, 1].map((n) => (
+                <>
+                  <input
+                    type="radio"
+                    name="rating"
+                    id={`star-${n}`}
+                    value={n}
+                    checked={editing?.rating === n}
+                  />
+                  <label for={`star-${n}`}>{n} ดาว</label>
+                </>
+              ))
+            }
+          </div>
+          <label class="flex items-center gap-1.5 text-muted">
+            <input type="radio" name="rating" value="0" checked={!editing?.rating} />
+            ไม่ให้ดาว
+          </label>
+        </div>
+      </fieldset>
 
       <label class={label}>
         เล่าให้ฟัง
@@ -148,7 +172,7 @@ const hatch =
           <span class="flex-1 text-muted">
             {editing ? 'ไม่เลือกไฟล์ใหม่ = เก็บรูปเดิมไว้' : 'jpg · png · webp · gif ไม่เกิน 8MB'}
             <input
-              class="mt-1.5 block w-full text-[12.5px] text-muted file:mr-2.5 file:rounded-full file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-[12px] file:font-medium file:text-bg"
+              class="mt-1.5 block w-full text-[12.5px] text-muted file:mr-2.5 file:rounded-full file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-[12px] file:font-medium file:text-on-accent"
               type="file"
               name="image"
               accept="image/jpeg,image/png,image/webp,image/gif"
@@ -166,7 +190,7 @@ const hatch =
           )
         }
         <button
-          class="min-h-12 flex-1 rounded-full bg-accent px-6 text-[15.5px] font-medium text-bg sm:min-h-11 sm:flex-none"
+          class="min-h-12 flex-1 rounded-full bg-accent px-6 text-[15.5px] font-medium text-on-accent sm:min-h-11 sm:flex-none"
         >
           {editing ? 'บันทึกการแก้ไข' : 'บันทึก'}
         </button>
@@ -176,16 +200,13 @@ const hatch =
     {
       events.length > 0 && (
         <>
-          <h2 class="mt-8 mb-3 font-display text-[18px] leading-[1.5] text-text">
+          <h2 id="list" class="mt-8 mb-3 scroll-mt-20 font-display text-[18px] leading-[1.5] text-text">
             ที่บันทึกไว้ {events.length} รายการ
           </h2>
           <ul class="grid gap-2.5">
             {events.map((e) => (
               <li
-                class:list={[
-                  'flex min-w-0 items-center gap-2.5 rounded-[18px] border p-3 sm:gap-3',
-                  e.image ? 'border-line bg-surface' : 'border-sage-line bg-sage-bg',
-                ]}
+                class="flex min-w-0 items-center gap-2.5 rounded-[18px] border border-line bg-surface p-3 sm:gap-3"
               >
                 {e.image ? (
                   <img
@@ -195,34 +216,26 @@ const hatch =
                     class="size-12 flex-none rounded-xl object-cover"
                   />
                 ) : (
-                  <span class="flex size-12 flex-none items-center justify-center rounded-xl bg-sage/25 font-mono text-[9.5px] text-sage-muted">
+                  <span class="flex size-12 flex-none items-center justify-center rounded-xl bg-alt/25 font-mono text-[9.5px] text-alt-muted">
                     no img
                   </span>
                 )}
                 <span class="min-w-0 flex-1">
-                  <span
-                    class:list={[
-                      'block truncate text-[14.5px] leading-[1.6]',
-                      e.image ? 'text-text' : 'text-sage-ink',
-                    ]}
-                  >
-                    {e.title}
-                  </span>
-                  <span
-                    class:list={[
-                      'block font-mono text-[10.5px] leading-[1.7]',
-                      e.image ? 'text-muted' : 'text-sage-muted',
-                    ]}
-                  >
+                  <span class="block truncate text-[14.5px] leading-[1.6] text-text">{e.title}</span>
+                  <span class="flex items-center gap-2 font-mono text-[10.5px] leading-[1.7] text-muted">
                     {e.event_date}
+                    {
+                      e.rating && (
+                        <span class="text-accent" aria-label={`${e.rating} จาก 5 ดาว`}>
+                          <span aria-hidden="true">{'★'.repeat(parseRating(e.rating) ?? 0)}</span>
+                        </span>
+                      )
+                    }
                   </span>
                 </span>
                 <a
                   href={`/admin?edit=${e.id}`}
-                  class:list={[
-                    pill,
-                    e.image ? 'border-accent-ink/35 text-accent-ink' : 'border-sage-muted/35 text-sage-muted',
-                  ]}
+                  class={`${pill} border-accent-ink/35 text-accent-ink`}
                 >
                   แก้
                 </a>

@@ -4,7 +4,7 @@ import { basename, extname, join } from 'node:path';
 
 export const MAX_BYTES = 8 * 1024 * 1024;
 
-/** content-type ที่ยอมรับ → นามสกุลที่เราตั้งเอง (ไม่เคยเชื่อชื่อไฟล์จาก client) */
+/** ชนิดที่ยอมรับ → นามสกุลที่เราตั้งเอง (ไม่เคยเชื่อชื่อไฟล์จาก client) */
 export const TYPES = new Map([
   ['image/jpeg', '.jpg'],
   ['image/png', '.png'],
@@ -14,12 +14,35 @@ export const TYPES = new Map([
 
 export const EXTS = new Map([...TYPES].map(([type, ext]) => [ext, type]));
 
+/** @type {[number[], string][]} */
+const MAGIC = [
+  [[0xff, 0xd8, 0xff], 'image/jpeg'],
+  [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 'image/png'],
+  [[0x47, 0x49, 0x46, 0x38], 'image/gif'],
+];
+
+/**
+ * ดูชนิดไฟล์จากไบต์จริง ไม่ใช่จาก content-type ที่ client บอกมา — pure ไว้ให้ test เรียก
+ * @param {Uint8Array} bytes
+ * @returns {string | null}
+ */
+export function sniff(bytes) {
+  for (const [sig, type] of MAGIC) {
+    if (sig.every((b, i) => bytes[i] === b)) return type;
+  }
+  // RIFF....WEBP
+  const tag = (o, s) => [...s].every((c, i) => bytes[o + i] === c.charCodeAt(0));
+  if (bytes.length >= 12 && tag(0, 'RIFF') && tag(8, 'WEBP')) return 'image/webp';
+  return null;
+}
+
 /**
  * ตั้งชื่อไฟล์ใหม่ + ตรวจ type/size — pure ไว้ให้ test.mjs เรียกได้
- * @param {string} type @param {number} size
+ * @param {string | null} type ชนิดที่ sniff ได้ ไม่ใช่ที่ client ส่งมา
+ * @param {number} size
  */
 export function pickName(type, size) {
-  const ext = TYPES.get(type);
+  const ext = type && TYPES.get(type);
   if (!ext) throw new Error('รองรับเฉพาะไฟล์ JPEG / PNG / WebP / GIF');
   if (size > MAX_BYTES) throw new Error('ไฟล์ใหญ่เกิน 8MB');
   return randomUUID() + ext;
@@ -32,8 +55,11 @@ export function pickName(type, size) {
  */
 export async function saveImage(file, dir) {
   if (!file || typeof file === 'string' || file.size === 0) return null;
-  const name = pickName(file.type, file.size);
-  await writeFile(join(dir, name), Buffer.from(await file.arrayBuffer()));
+  if (file.size > MAX_BYTES) throw new Error('ไฟล์ใหญ่เกิน 8MB');
+
+  const buf = Buffer.from(await file.arrayBuffer());
+  const name = pickName(sniff(buf), buf.byteLength);
+  await writeFile(join(dir, name), buf);
   return name;
 }
 

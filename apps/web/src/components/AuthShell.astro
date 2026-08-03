@@ -1,0 +1,48 @@
+---
+interface Props {
+  title: string;
+  subtitle?: string;
+}
+
+const { title, subtitle } = Astro.props;
+---
+
+<div class="grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
+  {/* แผงแบรนด์ — โผล่เฉพาะจอกว้าง มือถือไม่ต้องเสียพื้นที่ให้ของตกแต่ง
+      ตั้งใจไม่ใส่ชื่อคู่รักหรือจำนวนวันตรงนี้ เพราะนี่คือหน้าเดียวที่คนนอกเปิดได้ */}
+  <aside
+    class="hidden flex-col justify-between bg-accent px-14 py-16 text-on-accent lg:flex"
+    aria-hidden="true"
+  >
+    <p class="flex items-center gap-2.5">
+      <span class="pulse block size-2 rounded-full bg-on-accent"></span>
+      <span class="font-mono text-[11.5px] font-medium tracking-[0.14em] uppercase opacity-80">
+        our memory lane
+      </span>
+    </p>
+
+    <p class="font-display max-w-[16ch] text-[44px] leading-[1.35] text-balance">
+      ที่เก็บวันธรรมดา<br />ที่ไม่ธรรมดา
+    </p>
+
+    <p class="max-w-[34ch] text-[14px] leading-[1.9] opacity-75">
+      เขียนไว้เพื่อจะได้อ่านซ้ำในอีกสิบปี
+    </p>
+  </aside>
+
+  <main class="flex items-center justify-center px-5 py-12 sm:px-10 sm:py-16">
+    <div class="w-full max-w-sm">
+      <p class="mb-6 flex items-center gap-2.5 lg:hidden">
+        <span class="pulse block size-2 rounded-full bg-accent"></span>
+        <span class="font-mono text-[10.5px] font-medium tracking-[0.14em] text-muted uppercase">
+          our memory lane
+        </span>
+      </p>
+
+      <h1 class="font-display text-[28px] leading-[1.4] text-text sm:text-[32px]">{title}</h1>
+      {subtitle && <p class="mt-2 text-[14px] leading-[1.9] text-muted">{subtitle}</p>}
+
+      <slot />
+    </div>
+  </main>
+</div>

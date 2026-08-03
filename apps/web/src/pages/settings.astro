@@ -1,0 +1,180 @@
+---
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import { db } from '../lib/db.js';
+import { COOKIE, hash, sign, verify } from '../lib/auth.js';
+import { reset, tooMany } from '../lib/ratelimit.js';
+import { setSetting, siteSettings } from '../lib/settings.js';
+import { todayISO, validDate } from '../lib/calendar.js';
+
+const me = Astro.locals.user;
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const intent = form.get('intent');
+
+  if (intent === 'profile') {
+    const name = String(form.get('name') ?? '').trim().slice(0, 60);
+    db.prepare('UPDATE user SET name = ? WHERE id = ?').run(name || null, me.id);
+    return Astro.redirect('/settings?saved=profile', 303);
+  }
+
+  if (intent === 'password') {
+    const ip = Astro.clientAddress || 'unknown';
+    const current = String(form.get('current') ?? '');
+    const next = String(form.get('next') ?? '');
+    const confirm = String(form.get('confirm') ?? '');
+
+    // กันเดารหัสเดิมรัว ๆ ด้วยโควตาชุดเดียวกับหน้า login
+    if (tooMany(ip)) {
+      error = 'ลองผิดหลายครั้งเกินไป รออีก 15 นาทีแล้วค่อยลองใหม่';
+    } else if (next.length < 8) {
+      error = 'รหัสผ่านใหม่ต้องยาวอย่างน้อย 8 ตัวอักษร';
+    } else if (next !== confirm) {
+      error = 'รหัสผ่านใหม่กับช่องยืนยันไม่ตรงกัน';
+    } else {
+      const row = db.prepare('SELECT password FROM user WHERE id = ?').get(me.id);
+      if (!row || !verify(current, row.password)) {
+        error = 'รหัสผ่านปัจจุบันไม่ถูกต้อง';
+      } else {
+        // บวก token_version = cookie ทุกใบที่ออกไปก่อนหน้านี้ใช้ไม่ได้ทันที
+        const version = me.token_version + 1;
+        db.prepare('UPDATE user SET password = ?, token_version = ? WHERE id = ?').run(
+          hash(next),
+          version,
+          me.id,
+        );
+        // เซ็น cookie ใหม่ให้เครื่องนี้ ไม่งั้นคนที่เพิ่งเปลี่ยนรหัสจะโดนเตะออกเองด้วย
+        Astro.cookies.set('session', sign(me.id, version), COOKIE);
+        reset(ip);
+        return Astro.redirect('/settings?saved=password', 303);
+      }
+    }
+  }
+
+  if (intent === 'site') {
+    const coupleName = String(form.get('couple_name') ?? '').trim().slice(0, 80);
+    const startDate = validDate(form.get('start_date'));
+
+    if (!coupleName) {
+      error = 'ชื่อบนหน้าแรกว่างไม่ได้';
+    } else if (!startDate) {
+      error = 'วันเริ่มนับไม่ถูกต้อง';
+    } else if (startDate > todayISO()) {
+      error = 'วันเริ่มนับอยู่ในอนาคตไม่ได้';
+    } else {
+      setSetting('couple_name', coupleName);
+      setSetting('start_date', startDate);
+      return Astro.redirect('/settings?saved=site', 303);
+    }
+  }
+}
+
+const saved = Astro.url.searchParams.get('saved');
+const savedMessage = { profile: 'บันทึกชื่อแล้ว', password: 'เปลี่ยนรหัสผ่านแล้ว — อุปกรณ์อื่นถูกให้ออกจากระบบทั้งหมด', site: 'บันทึกค่าเว็บแล้ว' }[saved ?? ''];
+
+const site = siteSettings();
+
+const card =
+  'grid gap-3.5 rounded-[24px] border border-line bg-surface p-5 shadow-[0_3px_10px_rgba(46,43,37,0.10)] sm:rounded-[26px] sm:p-[26px]';
+const label = 'grid gap-1.5 text-[12.5px] leading-[1.8]';
+const input =
+  'min-h-11 w-full rounded-[14px] border border-line bg-field px-3.5 py-2.5 text-[15px] leading-[1.6] text-text outline-none focus:border-accent';
+const submit = 'min-h-11 justify-self-start rounded-full bg-accent px-6 text-[14.5px] font-medium text-on-accent';
+const heading = 'font-display text-[17px] leading-[1.5] text-text';
+---
+
+<Base title="ตั้งค่า">
+  <Nav current="settings" />
+
+  <main class="mx-auto w-full max-w-2xl px-5 py-7 sm:px-9 sm:py-9">
+    <h1 class="mt-6 mb-4 font-display text-[22px] leading-[1.45] text-text sm:text-[24px]">ตั้งค่า</h1>
+
+    {
+      savedMessage && (
+        <p class="mb-4 rounded-2xl border border-alt-line bg-alt-bg px-4 py-3 text-[13.5px] text-alt-ink">
+          {savedMessage}
+        </p>
+      )
+    }
+    {
+      error && (
+        <p class="mb-4 rounded-2xl border border-accent-ink/35 bg-accent/10 px-4 py-3 text-[13.5px] text-accent-ink">
+          {error}
+        </p>
+      )
+    }
+
+    <div class="grid gap-5">
+      <form method="post" class={card}>
+        <input type="hidden" name="intent" value="profile" />
+        <h2 class={heading}>บัญชี</h2>
+        <p class="text-[12.5px] text-muted">
+          อีเมล <span class="font-mono text-body">{me?.email}</span> — เปลี่ยนไม่ได้
+        </p>
+        <label class={label}>
+          ชื่อ <span class="text-muted">(ใช้เป็นตัวย่อบนไอคอนมุมขวาบน)</span>
+          <input class={input} type="text" name="name" value={me?.name ?? ''} maxlength="60" />
+        </label>
+        <button class={submit}>บันทึกชื่อ</button>
+      </form>
+
+      <form method="post" class={card}>
+        <input type="hidden" name="intent" value="password" />
+        <h2 class={heading}>เปลี่ยนรหัสผ่าน</h2>
+        <p class="text-[12.5px] leading-[1.8] text-muted">
+          เปลี่ยนแล้วอุปกรณ์อื่นที่ค้างล็อกอินอยู่จะถูกให้ออกจากระบบทั้งหมด เครื่องนี้ยังอยู่ต่อ
+        </p>
+        <label class={label}>
+          รหัสผ่านปัจจุบัน
+          <input class={input} type="password" name="current" autocomplete="current-password" required />
+        </label>
+        <label class={label}>
+          รหัสผ่านใหม่ <span class="text-muted">(อย่างน้อย 8 ตัว)</span>
+          <input
+            class={input}
+            type="password"
+            name="next"
+            minlength="8"
+            autocomplete="new-password"
+            required
+          />
+        </label>
+        <label class={label}>
+          ยืนยันรหัสผ่านใหม่
+          <input
+            class={input}
+            type="password"
+            name="confirm"
+            minlength="8"
+            autocomplete="new-password"
+            required
+          />
+        </label>
+        <button class={submit}>เปลี่ยนรหัสผ่าน</button>
+      </form>
+
+      <form method="post" class={card}>
+        <input type="hidden" name="intent" value="site" />
+        <h2 class={heading}>ค่าเว็บ</h2>
+        <label class={label}>
+          ชื่อบนหน้าแรก
+          <input
+            class={input}
+            type="text"
+            name="couple_name"
+            value={site.coupleName}
+            maxlength="80"
+            required
+          />
+        </label>
+        <label class={label}>
+          วันเริ่มนับ <span class="text-muted">(ตัวนับวันบนหน้าแรกนับจากวันนี้)</span>
+          <input class={input} type="date" name="start_date" value={site.startDate} required />
+        </label>
+        <button class={submit}>บันทึกค่าเว็บ</button>
+      </form>
+    </div>
+  </main>
+</Base>

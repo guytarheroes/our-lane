@@ -9,8 +9,14 @@
 
 Timeline ความทรงจำของคู่รัก 2 คน โฮสต์เองบน Raspberry Pi ที่บ้าน ไม่ได้ทำเป็นสินค้า ไม่มี user คนอื่น
 
-* `/` — timeline สาธารณะ ให้แฟนเปิดดู ส่งลิงก์ให้กันได้ (`noindex`)
-* `/login` `/admin` — หน้าหลังบ้านของเจ้าของเว็บ 2 คน
+**ทั้งเว็บต้องล็อกอินก่อน** ไม่มีหน้าไหนเปิดสาธารณะเลย (`noindex` ด้วย)
+
+* `/` — ไทม์ไลน์แนวตั้ง เรียงตามเวลา
+* `/calendar` — ปฏิทินรายเดือน เอารูปของความทรงจำมาแปะบนช่องวันที่
+* `/admin` — หน้าบันทึก · `/settings` — บัญชีและค่าเว็บ
+* `/login` `/register` — หน้าเดียวที่คนยังไม่ล็อกอินเปิดได้ ใช้ `<AuthShell>` ร่วมกัน
+  desktop เป็น 2 คอลัมน์ (แผงแบรนด์สีแดง + ฟอร์ม) ต่ำกว่า `lg` ยุบเหลือฟอร์มอย่างเดียว
+  **ห้ามใส่ชื่อคู่รักหรือจำนวนวันในหน้า auth** เพราะเป็นหน้าเดียวที่คนนอกเปิดได้
 
 **โทน:** อบอุ่น เป็นส่วนตัว เหมือนสมุดภาพมากกว่า dashboard
 หน้า `/` ควรรู้สึกเหมือนของขวัญ หน้า `/admin` ควรเรียบและใช้ง่าย ไม่ต้องสวยเท่าหน้าแรก
@@ -28,15 +34,19 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 |---|---|
 | `apps/web/src/styles/global.css` | tokens, `.reveal`, keyframes, reduced-motion |
 | `apps/web/src/layouts/Base.astro` | โครง `<head>`/`<body>`, font, favicon |
-| `apps/web/src/pages/index.astro` | timeline สาธารณะ |
-| `apps/web/src/pages/login.astro` | ฟอร์ม login/register |
+| `apps/web/src/pages/index.astro` | ไทม์ไลน์ |
+| `apps/web/src/pages/calendar.astro` | ปฏิทินรายเดือน + วงแหวนสถิติ |
+| `apps/web/src/pages/login.astro` · `register.astro` | ฟอร์ม auth |
+| `apps/web/src/pages/settings.astro` | บัญชี + ค่าเว็บ |
+| `apps/web/src/components/Nav.astro` · `AuthShell.astro` | navbar ร่วม + โครงหน้า auth |
 | `apps/web/src/pages/admin.astro` | ฟอร์มเพิ่ม/แก้ + รายการ |
 
 สร้าง `src/components/*.astro` เพิ่มได้ถ้าช่วยให้อ่านง่ายขึ้นจริง (ตอนนี้ยังไม่มีเลย เพราะยังไม่จำเป็น)
 
 ### ห้ามแตะ
 
-`src/lib/*` · `src/middleware.js` · `src/pages/logout.js` · `src/pages/uploads/[file].js`
+`src/lib/*` (รวม `calendar.js` ที่คำนวณช่องปฏิทิน) · `src/middleware.js`
+· `src/pages/logout.js` · `src/pages/uploads/[file].js`
 · `astro.config.mjs` · `Dockerfile` · `docker-compose.yml` · `package.json`
 
 ---
@@ -47,15 +57,19 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 
 **1. ห้ามเพิ่ม dependency** ทั้งเว็บมี 4 ตัว (astro, @astrojs/node, tailwindcss, @tailwindcss/vite)
 ไม่มี UI kit ไม่มี icon package ไม่มี animation library — icon ใช้ inline SVG หรือ emoji
-อยากได้ฟอนต์เฉพาะ ต้อง self-host: วางไฟล์ใน `apps/web/public/fonts/` แล้ว `@font-face`
+ฟอนต์ต้อง self-host เสมอ — ตอนนี้คือ **Bai Jamjuree** (SIL OFL) อยู่ใน `apps/web/public/fonts/`
+โหลดเฉพาะ subset `thai` + `latin` น้ำหนัก 400/500/600 รวม 6 ไฟล์ 76KB
 **ห้ามลิงก์ Google Fonts หรือ CDN ใด ๆ** เพราะ origin อยู่วงในไม่มีเน็ตออก
 
-**2. Tailwind v4 ไม่มี `tailwind.config.js`** เพิ่มสีใหม่ต้องแก้ **3 ที่** ใน `global.css`:
-`:root` → บล็อก `@media (prefers-color-scheme: dark)` → `@theme inline`
-ถ้าลืมที่ใดที่หนึ่ง utility class จะไม่มีอยู่จริง หรือ dark mode จะเพี้ยน
+**2. Tailwind v4 ไม่มี `tailwind.config.js`** เพิ่มสีใหม่ต้องแก้ **2 ที่** ใน `global.css`:
+`:root` → `@theme inline` ถ้าลืมที่ใดที่หนึ่ง utility class จะไม่มีอยู่จริง
 
-**3. dark mode ผ่าน `prefers-color-scheme` เท่านั้น** ห้ามใช้ `dark:` prefix ห้ามทำปุ่ม toggle
-ห้ามเก็บ theme ลง localStorage — สีมาจาก CSS variable ที่สลับค่าเองอยู่แล้ว
+**3. ไฟล์ใน `public/` ไม่ผ่านด่านล็อกอิน** static handler ทำงานก่อน middleware
+ฟอนต์จึงโหลดได้ตอนยังไม่ล็อกอิน (ตั้งใจ) แต่**ห้ามเอารูปหรืออะไรที่เป็นส่วนตัวไปวางที่นั่น**
+รูปที่ user อัปโหลดอยู่ใน `$DATA_DIR/uploads` เสิร์ฟผ่าน route จึงถูกกันตามปกติ
+
+**4. ไม่มี dark mode** palette เป็นโทนสว่างล้วน พื้นหลังเป็น Old lace เสมอ
+ห้ามใช้ `dark:` prefix ห้ามทำปุ่ม toggle ห้ามเก็บ theme ลง localStorage
 
 **4. เว็บต้องอ่านได้เมื่อ JS ไม่ทำงาน** สองจุดนี้คือหัวใจ:
 * `.reveal` เริ่มที่ `opacity: 0` ได้ **เฉพาะ** ใต้ selector `.js .reveal` — class `js` ถูกใส่ด้วย
@@ -95,50 +109,86 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 
 | ฟอร์ม | fields |
 |---|---|
-| เพิ่ม/แก้ | `id` (hidden, เฉพาะตอนแก้) · `event_date` (`type="date"`) · `location` · `title` · `description` · `image` (`type="file"`) |
+| เพิ่ม/แก้ | `id` (hidden, เฉพาะตอนแก้) · `event_date` (`type="date"`) · `location` · `title` · `rating` · `description` · `image` (`type="file"`) |
 | ลบ | `intent=delete` · `id` |
 | ออกจากระบบ | `action="/logout"` method post |
 
 * ลิงก์แก้ไขคือ `/admin?edit=<id>` — หน้าเดียวกัน ฟอร์มเดียวกัน แค่ prefill
 * `input[name=image]` ต้องคง `accept="image/jpeg,image/png,image/webp,image/gif"`
+* `rating` เป็น radio 6 ตัว (`0`–`5`) — ดาวเรียง DOM กลับหลัง 5→1 แล้ว `row-reverse` ใน CSS
+  ถ้าเรียงใหม่เป็น 1→5 การระบายดาวด้วย `input:checked ~ label` จะพังทันที
 * ปุ่มลบมี `onsubmit="return confirm(...)"` — เก็บไว้ (ถ้า JS ปิด ก็แค่ลบเลย ยอมรับได้)
+
+**`/calendar`**
+
+| พารามิเตอร์ | ใช้ตอนไหน |
+|---|---|
+| `?m=YYYY-MM` | เดือนที่กำลังดู — ลูกศร ‹ › และลิงก์ที่แปะให้กันใช้อันนี้ |
+| `?open=1` | เปิด date picker ค้างไว้หลังกดเลือกปี |
+| `?pick=year` | สลับ picker ไปชั้นเลือก พ.ศ. (เปิด picker ให้เองไม่ต้องมี `open=1`) |
+
+`m` ต้องผ่าน `validMonth()` ก่อนเสมอ ค่าที่ไม่ผ่านให้ตกไปเดือน default ห้าม 500
+
+**date picker เป็น `<details>` + `<a>` ล้วน ไม่มี JS** สถานะ 2 ชั้น (เลือกเดือน → เลือกปี)
+อยู่ใน URL ทั้งหมด ถ้าจะทำใหม่เป็น dropdown ที่ต้องใช้ JS จะพังกฎข้อ 4 และข้อ 7
+ช่องวันที่ลิงก์ไป `/#e<id>` — ผูกกับ `id` บน `<li>` ของไทม์ไลน์ ถ้าถอด `id` ออกปฏิทินจะลิงก์ไปไม่ถึง
+
+**`/settings`** — 3 ฟอร์มแยกด้วย `intent`: `profile` (`name`) · `password` (`current`/`next`/`confirm`) · `site` (`couple_name`/`start_date`)
+
+**`<Nav>`** — รับ prop `current` เป็นหนึ่งใน `timeline | calendar | admin | settings`
+เมนูบัญชีเป็น `<details>` ไม่มี JS ถ้าเปลี่ยนเป็น dropdown ที่ต้องใช้ JS จะพังกฎข้อ 5
 
 **`/`**
 
+* `<li id="e<id>">` ของแต่ละการ์ด — ปลายทางของลิงก์จากปฏิทิน อย่าถอดออก
 * `#counter` + `data-start="YYYY-MM-DD"` — inline script ท้ายหน้าอ่านสองอย่างนี้
 * การ์ดแต่ละใบต้องมี class `reveal` ถึงจะเข้า IntersectionObserver
 * `<time datetime={e.event_date}>` เก็บ `datetime` ไว้
 
-ตัวแปรที่มีให้ใช้ต่อการ์ดหนึ่งใบ: `e.title` `e.description` `e.event_date` `e.location` `e.image`
-(`description` `location` `image` เป็น null ได้ — ต้องมี empty state ที่ไม่พัง)
+ตัวแปรที่มีให้ใช้ต่อการ์ดหนึ่งใบ: `e.title` `e.description` `e.event_date` `e.location` `e.image` `e.rating`
+(`description` `location` `image` `rating` เป็น null ได้ — ต้องมี empty state ที่ไม่พัง)
+`rating` เป็น 1–5 หรือ null เท่านั้น การ์ดแสดง `★★★☆☆` ส่วนช่องปฏิทินเล็กเกินไป จึงแสดง `★3` แทน
 
 ---
 
 ## 5. ของที่มีอยู่ตอนนี้
 
-ธีม **ครีม–ดินเผา–เซจ** (organic warm) tokens ใน `global.css` — เปลี่ยนค่าได้อิสระ เพิ่ม/ลดชื่อได้ ขอแค่ครบ 3 ที่
+ธีม **Old lace · Gray · Crimson red · Barn red** tokens ใน `global.css` — เปลี่ยนค่าได้อิสระ เพิ่ม/ลดชื่อได้ ขอแค่ครบ 2 ที่
 
-| token | light | dark | ใช้ทำอะไร |
-|---|---|---|---|
-| `--bg` | `#f5ead8` | `#1b1714` | พื้นหลังหน้า |
-| `--surface` | `#fffdf7` | `#262019` | การ์ดที่มีรูป, ฟอร์ม |
-| `--field` | `#f9f4ed` | `#201b16` | พื้น input |
-| `--text` | `#201e1d` | `#f7eedd` | หัวข้อ |
-| `--body` | `#474238` | `#d3c6b2` | ย่อหน้า |
-| `--muted` | `#82796a` | `#b3a693` | วันที่, ป้ายรอง |
-| `--line` | `#ded3bf` | `#3a332a` | เส้นขอบ, เส้น timeline |
-| `--accent` | `#c67139` | `#f6a06b` | พื้นปุ่ม, จุด timeline |
-| `--accent-ink` | `#b2622d` | `#f6a06b` | ลิงก์/ตัวเลขนับวัน (เข้มกว่าเพื่อผ่าน AA) |
-| `--sage` … `--sage-muted` | เขียวเซจ 6 ตัว | | การ์ดคำพูด, ฟอร์มสมัคร, รายการที่ไม่มีรูป |
+| token | ค่า | ใช้ทำอะไร |
+|---|---|---|
+| `--bg` | `#fdf6ea` Old lace | พื้นหลังหน้า |
+| `--surface` | `#fffcf6` | การ์ดที่มีรูป, ฟอร์ม |
+| `--field` | `#f6ecdc` | พื้น input |
+| `--text` | `#560d07` Barn red | หัวข้อ |
+| `--body` | `#4a3833` | ย่อหน้า |
+| `--muted` | `#7d5c56` | วันที่, ป้ายรอง |
+| `--line` | `#e5d6c2` | เส้นขอบ, เส้น timeline |
+| `--accent` | `#8c0f06` Crimson | พื้นปุ่ม, จุด timeline |
+| `--accent-ink` | `#8c0f06` | ลิงก์/ตัวเลขนับวัน |
+| `--on-accent` | `#fdf6ea` | ตัวอักษรบนพื้น accent — ใช้ token นี้เสมอ ห้ามใช้ `text-bg` |
+| `--star-empty` | `#e6c4bf` | ดาวที่ยังไม่ได้เลือก — **ห้ามเปลี่ยนเป็น `color-mix()`** compiler จะสร้าง fallback เป็นสีทึบ เบราว์เซอร์เก่าจะเห็นดาวเปล่าเป็นแดงเต็มเหมือนติ๊ก 5 ดาวไว้ |
+| `--alt` … `--alt-muted` | ฟ้าหม่น `#7c9cbe` 6 ตัว | การ์ดคำพูด, ฟอร์มสมัคร, รายการที่ไม่มีรูป |
 
-ฟอนต์: `--font-display` (Layiji Mahaniyom → Noto Serif Thai → fallback) สำหรับหัวข้อ, `--font-body` (Sarabun → Noto Sans Thai)
-**ยังไม่มีไฟล์ฟอนต์จริงในเครื่อง** — stack fallback ไป system font เงียบ ๆ ได้ไฟล์มาเมื่อไหร่ วางใน `public/fonts/` แล้วเพิ่ม `@font-face`
+คู่สีทุกคู่ผ่าน WCAG AA แล้ว (ตัวปกติ ≥ 4.5:1, หัวข้อ ≥ 3:1) — เปลี่ยนค่าแล้ววัดใหม่ด้วย
 
+ฟอนต์: **Bai Jamjuree** ทั้ง `--font-display` (หัวข้อ น้ำหนัก 600) และ `--font-body` (เนื้อความ 400)
+ไฟล์อยู่ `public/fonts/` เสิร์ฟจาก origin เอง ไม่มี request ออกนอกเลย
+
+* `<Nav>` เป็นแถบ **`fixed top-0` สูง 56px** ครอบทุกหน้าที่ล็อกอินแล้ว
+  `[● wordmark] [ไทม์ไลน์] [ปฏิทิน] … [＋] [avatar]` — wordmark ซ่อนต่ำกว่า `sm`
+  ไม่งั้นแถวเดียวใส่ไม่พอที่ 320px
+  * คอมโพเนนต์ปล่อย spacer `h-14` ออกมาเอง หน้าอื่นไม่ต้องเผื่อ padding บน
+  * `html { scroll-padding-top: 4.5rem }` ใน `global.css` ทำให้ anchor ทุกอันหยุดใต้แถบ
+    **อย่าใส่ `scroll-mt` ที่ element เองอีก** จะบวกกันกลายเป็นเว้นเยอะเกิน
+  * เมนูบัญชี (`<details>`) มี: ชื่อ/อีเมล · รายการของฉัน (`/admin#list`) · ตั้งค่า · ออกจากระบบ
+* **ไม่ใช้ floating action button** — จะลอยทับรูปความทรงจำตลอดเวลา ขัดกับโทนสมุดภาพ
+  ปุ่ม ＋ อยู่ในแถบ fixed ซึ่งเห็นตลอดอยู่แล้ว
 * `.pulse` — จุดเต้น 2.4s (`ml-pulse`) บน eyebrow และใน empty state
 * `.js .reveal` / `.js .reveal.in` — fade + เลื่อนขึ้น 24px
 * layout: `max-w-5xl` หน้า `/`, `max-w-2xl` หน้า `/admin`, `max-w-3xl` หน้า `/login`
 * timeline desktop = zigzag รอบเส้นกลาง (`sm:grid-cols-2` + `sm:col-start-1/2` สลับตาม index), ≤640px ยุบเป็นคอลัมน์เดียว เส้นชิดซ้าย
-* การ์ด 3 แบบ: **มีรูป** (surface, รูป 4:3 full-bleed) · **ไม่มีรูปแต่มีเรื่องเล่า** (พื้นเซจ ตัวใหญ่ขึ้น) · **ไม่มีทั้งคู่** (surface กะทัดรัด)
+* การ์ด 3 แบบ: **มีรูป** (surface, รูป 4:3 full-bleed) · **ไม่มีรูปแต่มีเรื่องเล่า** (พื้นฟ้าหม่น ตัวใหญ่ขึ้น) · **ไม่มีทั้งคู่** (surface กะทัดรัด)
 * `min-w-0` บนทุก grid item ในไทม์ไลน์ — ถ้าถอดออก จอ 375px จะเลื่อนแนวนอน
 
 ---
@@ -163,7 +213,8 @@ npm run build          # ต้องผ่าน
 
 ไล่ดูด้วยตาทั้ง 6 ข้อ:
 
-- [ ] `/` `/login` `/admin` ปกติทั้ง light และ dark (สลับที่ System Settings → Appearance)
+- [ ] `/` `/calendar` `/login` `/admin` ต้องเป็นโทน Old lace แม้เครื่องตั้ง dark mode อยู่
+- [ ] `/calendar` 7 คอลัมน์ที่ 320px ต้องไม่ล้น (จุดที่ล้นง่ายที่สุดในเว็บนี้)
 - [ ] มือถือ 375px ไม่มี horizontal scroll
 - [ ] **ปิด JS** (DevTools → Command Palette → Disable JavaScript) แล้ว reload `/` — ต้องเห็นเนื้อหาครบและเห็นจำนวนวัน
 - [ ] เปิด reduced motion (macOS: System Settings → Accessibility → Display → Reduce motion) — ต้องไม่มีอะไรขยับ แต่เนื้อหายังเห็นครบ

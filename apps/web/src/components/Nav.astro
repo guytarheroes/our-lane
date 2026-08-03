@@ -1,0 +1,88 @@
+---
+interface Props {
+  current: 'timeline' | 'calendar' | 'admin' | 'settings';
+}
+
+const { current } = Astro.props;
+const user = Astro.locals.user;
+
+const pill = 'inline-flex min-h-9 flex-none items-center rounded-full px-3.5 text-[13px] font-medium sm:px-4';
+const on = `${pill} bg-accent text-on-accent`;
+const off = `${pill} border border-line text-muted`;
+const item = 'block rounded-xl px-3 py-2 text-[13.5px]';
+
+// ชื่อย่อบน avatar — ไม่มีชื่อก็เอาตัวแรกของอีเมล ไม่มีอะไรเลยก็ขีดกลาง
+const initial = (user?.name?.trim() || user?.email || '—').trim().charAt(0).toUpperCase();
+---
+
+<nav class="fixed inset-x-0 top-0 z-30 h-14 border-b border-line bg-bg" aria-label="เมนูหลัก">
+  <div class="mx-auto flex h-full w-full max-w-5xl items-center gap-2 px-5 sm:px-12">
+    <p class="flex flex-none items-center gap-2.5">
+      <span class="pulse block size-2 rounded-full bg-accent"></span>
+      {/* จอแคบเหลือแค่จุด ไม่งั้นแถบเดียวใส่ทั้ง wordmark + 2 pill + 2 ปุ่มไม่พอที่ 320px */}
+      <span class="hidden font-mono text-[10.5px] font-medium tracking-[0.14em] text-muted uppercase sm:inline">
+        our memory lane
+      </span>
+    </p>
+
+    <a href="/" class={current === 'timeline' ? on : off} aria-current={current === 'timeline' ? 'page' : undefined}>
+      ไทม์ไลน์
+    </a>
+    <a href="/calendar" class={current === 'calendar' ? on : off} aria-current={current === 'calendar' ? 'page' : undefined}>
+      ปฏิทิน
+    </a>
+
+    <a
+      href="/admin"
+      aria-label="เพิ่มความทรงจำ"
+      aria-current={current === 'admin' ? 'page' : undefined}
+      class:list={[
+        'ml-auto inline-flex size-9 flex-none items-center justify-center rounded-full text-[17px] leading-none',
+        current === 'admin' ? 'bg-accent text-on-accent' : 'border border-accent-ink/40 text-accent-ink',
+      ]}
+    >
+      <span aria-hidden="true">＋</span>
+    </a>
+
+    {/* <details> คือ disclosure ของ HTML เอง — เปิดปิดได้โดยไม่ต้องมี JS
+        และ screen reader ประกาศสถานะย่อ/ขยายให้เอง (แพตเทิร์นเดียวกับ date picker ในปฏิทิน) */}
+    <details class="relative flex-none">
+      <summary
+        class="flex size-9 cursor-pointer list-none items-center justify-center rounded-full border border-alt-muted/45 bg-alt-bg text-[14px] font-medium text-alt-ink marker:hidden [&::-webkit-details-marker]:hidden"
+        aria-label="เมนูบัญชี"
+      >
+        {initial}
+      </summary>
+
+      <div
+        class="absolute top-full right-0 z-20 mt-2 w-56 rounded-2xl border border-line bg-surface p-2 shadow-[0_8px_24px_rgba(46,43,37,0.16)]"
+      >
+        <p class="px-3 py-2">
+          <span class="block truncate text-[14px] text-text">{user?.name || 'ยังไม่ได้ตั้งชื่อ'}</span>
+          <span class="block truncate font-mono text-[11px] text-muted">{user?.email}</span>
+        </p>
+
+        <a
+          href="/admin#list"
+          class:list={[item, current === 'admin' ? 'bg-accent text-on-accent' : 'text-body hover:bg-field']}
+        >
+          รายการของฉัน
+        </a>
+        <a
+          href="/settings"
+          aria-current={current === 'settings' ? 'page' : undefined}
+          class:list={[item, current === 'settings' ? 'bg-accent text-on-accent' : 'text-body hover:bg-field']}
+        >
+          ตั้งค่า
+        </a>
+
+        <form method="post" action="/logout">
+          <button class={`${item} w-full text-left text-accent-ink hover:bg-field`}>ออกจากระบบ</button>
+        </form>
+      </div>
+    </details>
+  </div>
+</nav>
+
+{/* กันเนื้อหาไม่ให้มุดใต้แถบที่ fixed — อยู่ในคอมโพเนนต์เองหน้าอื่นจะได้ไม่ต้องจำ */}
+<div class="h-14" aria-hidden="true"></div>

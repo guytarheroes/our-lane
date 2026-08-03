@@ -5,7 +5,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Overview
 
 npm-workspaces monorepo holding one Astro site: **Our Memory Lane** — timeline ความทรงจำของคู่รัก
-หน้าแรกเป็น timeline สาธารณะ (`noindex`) `/admin` เป็นหน้าบันทึกที่ต้องล็อกอิน
+**ทั้งเว็บเป็นของส่วนตัว ต้องล็อกอินก่อนถึงจะเห็นอะไรก็ตาม** (`noindex` ด้วย)
+`/` ไทม์ไลน์ · `/calendar` ปฏิทินรายเดือน · `/admin` หน้าบันทึก · `/settings` ตั้งค่า
+`/login` + `/register` คือหน้าเดียวที่เปิดให้คนยังไม่ล็อกอินเข้าได้
 
 ## Commands
 
@@ -28,13 +30,28 @@ npm test                     # apps/web/test.mjs — assert ล้วน ไม�
 
 **DB คือ SQLite ผ่าน `node:sqlite`** (built-in ไม่ใช่ dependency) ไฟล์อยู่ `$DATA_DIR/our-lane.db`
 schema ถูกสร้างด้วย `CREATE TABLE IF NOT EXISTS` ตอน import `src/lib/db.js` — ไม่มี migration tool
-แก้ schema แล้วต้องเขียน `ALTER TABLE` เอง `node:sqlite` ต้องใช้ **Node ≥ 22.5** (จะขึ้น ExperimentalWarning ตอนบูต ปกติ)
+เพิ่มคอลัมน์ต้องเขียน `ALTER TABLE` เอง โดยเช็ค `PRAGMA table_info` ก่อนให้ idempotent
+(ดูคอลัมน์ `rating` เป็นตัวอย่าง) **อย่าใช้ try/catch ครอบเปล่า ๆ** จะกลืน error จริงที่ควรดัง `node:sqlite` ต้องใช้ **Node ≥ 22.5** (จะขึ้น ExperimentalWarning ตอนบูต ปกติ)
 
 **session คือ cookie ที่เซ็น HMAC** ไม่มีตาราง session — `sign()`/`unsign()` ใน `src/lib/auth.js`
-`src/middleware.js` กัน `/admin` ทั้ง GET และ POST ไว้แล้ว หน้าใน `/admin` ไม่ต้องเช็ก auth ซ้ำ
+token เซ็นเวลาที่ออกไปด้วยและตรวจอายุ 30 วันฝั่ง server (cookie ที่หลุดจะหมดอายุเอง)
 
-**สมัครสมาชิกได้แค่ 2 คน** `login.astro` นับ user แล้วซ่อนฟอร์มสมัครเมื่อครบ — นี่คือระบบสิทธิ์ทั้งหมดที่มี
+**`src/middleware.js` กันทั้งเว็บด้วย allowlist** เปิดแค่ `/login`, `/register`, `/logout`
+นอกนั้นเด้งไป `/login` หมด รวมถึง `/uploads/*` — **หน้าใหม่ที่เพิ่มทีหลังถูกกันให้อัตโนมัติ**
+ไม่ต้องกลับมาแก้ middleware และหน้าไหนก็ไม่ต้องเช็ก auth ซ้ำ
+
+**ยกเว้นไฟล์ static** (`/_astro/*` และทุกอย่างใน `public/`) ที่ handler เสิร์ฟก่อนถึง middleware
+จึงไม่ผ่านด่านเลย — ฟอนต์อยู่ตรงนั้นได้ แต่ห้ามเอาอะไรที่เป็นส่วนตัวไปวาง
+
+**สมัครสมาชิกได้แค่ 2 คน** `register.astro` นับ user ทั้งตอน render และตอน POST — นี่คือระบบสิทธิ์ทั้งหมดที่มี
 ไม่มี role ไม่มี ownership ต่อ event
+
+**ค่าเว็บอยู่ใน DB ไม่ใช่ env แล้ว** `siteSettings()` ใน `src/lib/settings.js` อ่านตามลำดับ
+DB → env → ค่าตั้งต้น **พอกดบันทึกใน `/settings` ครั้งแรก ค่าใน `.env` จะถูกเมินตลอดไป**
+อยากกลับไปใช้ค่าจาก env ต้อง `DELETE FROM setting WHERE key = ...` เอง
+
+**`token_version` ในตาราง user คือกลไก revoke session** เซ็นติดไปกับ cookie
+เปลี่ยนรหัสผ่าน = บวกหนึ่ง = cookie เก่าทุกใบตายทันที middleware เป็นตัวเทียบให้
 
 ## Deploy
 
@@ -97,8 +114,8 @@ DatePicker คือ `<input type="date">` และ animation ทั้งห�
 
 **Tailwind v4 ไม่มี `tailwind.config.js`** ต่อผ่าน `@tailwindcss/vite` ใน `astro.config.mjs`
 สีทั้งหมดประกาศเป็น CSS variable บน `:root` แล้ว map เข้า utility ด้วย `@theme inline`
-ใน `src/styles/global.css` — dark mode จึงทำงานผ่าน `prefers-color-scheme` โดยไม่ต้องมี `dark:` prefix
-เพิ่มสีใหม่ต้องแก้ทั้ง 3 ที่: `:root`, บล็อก dark, และ `@theme inline`
+ใน `src/styles/global.css` — เพิ่มสีใหม่ต้องแก้ **2 ที่**: `:root` และ `@theme inline`
+**ไม่มี dark mode** palette เป็นโทนสว่างล้วน พื้นหลังเป็น Old lace เสมอ ห้ามใช้ `dark:` prefix
 
 **เว็บต้องอ่านได้เมื่อ JS ไม่ทำงาน** `.reveal` เริ่มที่ `opacity: 0` แต่ selector คือ `.js .reveal`
 โดย class `js` ถูกใส่ด้วย inline script ใน `<head>` ของ `Base.astro` — ถ้าลบ gate นี้ทิ้ง
@@ -114,6 +131,9 @@ JS แค่มาเติมชั่วโมง/นาที/วินาท
 **รูปที่ user อัปโหลดใช้ `<Image>` ของ `astro:assets` ไม่ได้** เพราะ astro:assets ประมวลผลตอน build
 แต่รูปพวกนี้มาถึงหลัง build — จึงเป็น `<img loading="lazy" decoding="async">` ธรรมดาที่ชี้ไป `/uploads/[file]`
 (กฎ "รูปต้อง import ผ่าน `<Image>`" ใช้กับรูปใน `src/assets/` เท่านั้น ตอนนี้ยังไม่มี)
+
+**`<Nav>` กับ `<AuthShell>` ใน `src/components/`** เป็น component 2 ตัวเดียวที่มี —
+nav เคยเขียนซ้ำ 3 หน้า เพิ่มปุ่มทีต้องแก้ 3 ที่ ถ้าจะเพิ่มหน้าใหม่ให้เรียก `<Nav current="..." />`
 
 **ห้ามเชื่อชื่อไฟล์หรือนามสกุลที่ client ส่งมา** `pickName()` ตั้งชื่อใหม่เป็น UUID จาก content-type
 ที่อยู่ใน allowlist เท่านั้น และ `safeServe()` เอา `basename()` ตัด `../` ก่อนอ่านไฟล์เสมอ

@@ -2,12 +2,15 @@ import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypt
 
 const SECRET = process.env.SESSION_SECRET ?? 'dev-only-insecure-secret';
 
+/** อายุ session — บังคับที่ฝั่ง server ด้วย ไม่ใช่เชื่อ maxAge ของ browser อย่างเดียว */
+export const MAX_AGE_SEC = 60 * 60 * 24 * 30;
+
 export const COOKIE = /** @type {const} */ ({
   httpOnly: true,
   sameSite: 'lax',
   path: '/',
   secure: process.env.NODE_ENV === 'production',
-  maxAge: 60 * 60 * 24 * 30,
+  maxAge: MAX_AGE_SEC,
 });
 
 /** @param {string} password */
@@ -28,21 +31,36 @@ export function verify(password, stored) {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-// ponytail: cookie ที่เซ็น HMAC *คือ* session เอง — ไม่มีตาราง session ไม่มีอะไรต้องหมดอายุ
-// ceiling: ถ้าต้อง revoke session ทันที (เครื่องหาย) ค่อยเพิ่มคอลัมน์ token_version ใน user
-/** @param {number} userId */
-export function sign(userId) {
-  const body = String(userId);
-  return `${body}.${createHmac('sha256', SECRET).update(body).digest('base64url')}`;
+/** @param {string} body */
+const mac = (body) => createHmac('sha256', SECRET).update(body).digest('base64url');
+
+// ponytail: cookie ที่เซ็น HMAC *คือ* session เอง — ไม่มีตาราง session
+// เซ็น 3 อย่างไปด้วยกัน: id ของ user, token_version, และเวลาที่ออก
+//   - เวลา  → cookie ที่หลุดหมดอายุเองแม้ browser จะเก็บไว้ข้ามปี
+//   - version → เปลี่ยนรหัสผ่านแล้วบวกหนึ่ง cookie เก่าทุกอันตายทันที (revoke ได้จริง)
+// ตัวเทียบ version อยู่ใน middleware เพราะต้องอ่าน DB ที่นี่ขอเป็น pure ไว้ให้ test เรียก
+/** @param {number} userId @param {number} version @param {number} [now] */
+export function sign(userId, version, now = Date.now()) {
+  const body = `${userId}.${version}.${Math.floor(now / 1000)}`;
+  return `${body}.${mac(body)}`;
 }
 
-/** @param {string | undefined} cookie @returns {number | null} */
-export function unsign(cookie) {
-  const [body, mac] = String(cookie ?? '').split('.');
-  if (!body || !mac || !/^\d+$/.test(body)) return null;
-  const expected = createHmac('sha256', SECRET).update(body).digest('base64url');
-  const a = Buffer.from(mac);
+/**
+ * @param {string | undefined} cookie @param {number} [now]
+ * @returns {{ id: number, version: number } | null}
+ */
+export function unsign(cookie, now = Date.now()) {
+  const [id, version, issued, sig] = String(cookie ?? '').split('.');
+  const digits = (v) => /^\d+$/.test(v ?? '');
+  if (!digits(id) || !digits(version) || !digits(issued) || !sig) return null;
+
+  const expected = mac(`${id}.${version}.${issued}`);
+  const a = Buffer.from(sig);
   const b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  return Number(body);
+
+  const age = Math.floor(now / 1000) - Number(issued);
+  if (age < 0 || age > MAX_AGE_SEC) return null;
+
+  return { id: Number(id), version: Number(version) };
 }

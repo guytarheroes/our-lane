@@ -5,7 +5,8 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   output: 'server',
-  adapter: node({ mode: 'standalone' }),
+  // default ของ adapter คือ 1GB — เว็บนี้รับแค่รูป 8MB จำกัดไว้กัน body ใหญ่ ๆ กินแรม Pi
+  adapter: node({ mode: 'standalone', bodySizeLimit: 10 * 1024 * 1024 }),
 
   // TLS จบที่ Cloudflare — container เห็นตัวเองเป็น http แต่เบราว์เซอร์ส่ง Origin เป็น https
   // ถ้าไม่ประกาศ allowedDomains ไว้ Astro จะไม่เชื่อ X-Forwarded-Proto แล้วตอบ
