@@ -9,6 +9,35 @@ permissions:
   contents: read
 
 jobs:
+  # ยิงคู่กับ check ไม่ต้องรอใคร — ให้ Discord รู้ตั้งแต่ตอนเริ่ม ไม่ใช่รู้ตอนจบอย่างเดียว
+  notify-start:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: แจ้ง Discord ว่าเริ่มแล้ว
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          TITLE: Build started!
+          COLOR: 3447003
+          NODE: GitHub-hosted
+          STAGE: check
+          VERB: started
+          PROJECT: ${{ github.repository }}/${{ github.ref_name }}
+          RUN_NUMBER: ${{ github.run_number }}
+          MESSAGE: ${{ github.event.head_commit.message }}
+          SHA: ${{ github.sha }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          DESC=$(printf 'A Build **#%s** at **%s** process has %s!\n%s' \
+            "$RUN_NUMBER" "$STAGE" "$VERB" \
+            "$(printf '%s' "${MESSAGE:-(ไม่มีข้อความ commit)}" | head -1)")
+          BRANCH="[origin/main]($REPO_URL/tree/main)"
+          COMMIT="[$SHA]($REPO_URL/commit/$SHA)"
+          export DESC BRANCH COMMIT
+          sh .github/discord.sh
+
   check:
     runs-on: ubuntu-latest
     steps:
@@ -67,57 +96,40 @@ jobs:
     if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       # ส่ง context ผ่าน env: ไม่แปะ ${{ }} ลงใน run: ตรง ๆ — commit message เป็น input ที่ผู้อื่นแก้ได้
-      # และ jq --arg คือตัวที่ทำให้มันกลายเป็น JSON string เสมอ ไม่ใช่โค้ด
+      # ตัวที่กันจริงคือ jq --arg ใน .github/discord.sh
       - name: แจ้ง Discord
         env:
           WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           CHECK: ${{ needs.check.result }}
           DEPLOY: ${{ needs.deploy.result }}
-          ACTOR: ${{ github.actor }}
+          NODE: Raspberry Pi (self-hosted)
+          PROJECT: ${{ github.repository }}/${{ github.ref_name }}
+          RUN_NUMBER: ${{ github.run_number }}
           MESSAGE: ${{ github.event.head_commit.message }}
           SHA: ${{ github.sha }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           SITE: https://bibistang.guytarheroes.com
         run: |
-          if [ -z "$WEBHOOK" ]; then
-            echo "ยังไม่ได้ตั้ง secret DISCORD_WEBHOOK — ข้ามการแจ้งเตือน"
-            exit 0
-          fi
-
           if [ "$DEPLOY" = "success" ]; then
-            TITLE="🚀 ขึ้น production แล้ว"
-            COLOR=13005113
+            TITLE="Build successful!"; COLOR=3066993; STAGE=deploy; VERB=successful
           elif [ "$CHECK" != "success" ]; then
-            TITLE="❌ CI ไม่ผ่าน — ไม่ได้ deploy"
-            COLOR=12597547
+            TITLE="Build failed!"; COLOR=15158332; STAGE=check; VERB=failed
           elif [ "$DEPLOY" = "cancelled" ]; then
             # cancelled = concurrency group เตะทิ้งเพราะมี commit ใหม่กว่าต่อคิว ไม่ใช่ของพัง
-            # ถ้าเห็นอันนี้รัวทุก commit แปลว่า runner บน Pi ไม่ได้รับงาน
-            TITLE="⏭️ ข้าม deploy — มี commit ใหม่กว่าต่อคิวอยู่"
-            COLOR=9807270
+            # ถ้าเห็นอันนี้รัวทุก commit แปลว่า runner บน Pi ไม่รับงาน
+            TITLE="Build skipped!"; COLOR=9807270; STAGE=deploy; VERB=skipped
           else
-            TITLE="❌ deploy ล้มเหลว"
-            COLOR=12597547
+            TITLE="Deploy failed!"; COLOR=15158332; STAGE=deploy; VERB=failed
           fi
 
-          jq -n \
-            --arg title "$TITLE" \
-            --arg desc "$(printf '%s' "${MESSAGE:-(ไม่มีข้อความ commit)}" | head -1)" \
-            --arg sha "$(printf '%s' "$SHA" | cut -c1-7)" \
-            --arg actor "$ACTOR" \
-            --arg url "$RUN_URL" \
-            --arg site "$SITE" \
-            --argjson color "$COLOR" \
-            '{embeds:[{
-              title: $title,
-              url: $url,
-              color: $color,
-              description: $desc,
-              fields: [
-                {name: "commit", value: $sha, inline: true},
-                {name: "โดย", value: $actor, inline: true},
-                {name: "เว็บ", value: $site, inline: false}
-              ]
-            }]}' \
-            | curl -sS -f -X POST -H 'Content-Type: application/json' -d @- "$WEBHOOK"
+          DESC=$(printf 'A Build **#%s** at **%s** process has %s!\n%s' \
+            "$RUN_NUMBER" "$STAGE" "$VERB" \
+            "$(printf '%s' "${MESSAGE:-(ไม่มีข้อความ commit)}" | head -1)")
+          if [ "$DEPLOY" = "success" ]; then DESC=$(printf '%s\n%s' "$DESC" "$SITE"); fi
+          BRANCH="[origin/main]($REPO_URL/tree/main)"
+          COMMIT="[$SHA]($REPO_URL/commit/$SHA)"
+          export TITLE COLOR DESC BRANCH COMMIT
+          sh .github/discord.sh
