@@ -43,11 +43,11 @@ const initial = (user?.name?.trim() || user?.email || '—').trim().charAt(0).to
       aria-label={t('nav.add')}
       aria-current={current === 'admin' ? 'page' : undefined}
       class:list={[
-        'ml-auto inline-flex size-9 flex-none items-center justify-center rounded-full text-[17px] leading-none',
+        'ml-auto inline-flex size-9 flex-none items-center justify-center rounded-full',
         current === 'admin' ? 'bg-accent text-on-accent' : 'border border-accent-ink/40 text-accent-ink',
       ]}
     >
-      <span aria-hidden="true">＋</span>
+      <svg {...SVG_PROPS} stroke-width="2" class="size-[17px]" set:html={ICON.plus} />
     </a>
 
     {/* <details> คือ disclosure ของ HTML เอง — เปิดปิดได้โดยไม่ต้องมี JS
