@@ -78,3 +78,19 @@ export async function removeThumbs(file) {
   const name = basename(file);
   await Promise.all(Object.keys(SIZES).map((s) => rm(cachePath(name, s), { force: true })));
 }
+
+/**
+ * มิติจริงของรูปหลังหมุนตาม EXIF แล้ว — เอาไปใส่ width/height ให้ <img> จองที่ล่วงหน้า
+ * @param {string} file
+ * @returns {Promise<{width: number, height: number} | null>}
+ */
+export async function imageSize(file) {
+  const sharp = await loadSharp();
+  if (!sharp) return null;
+  try {
+    const m = await sharp(join(UPLOAD_DIR, basename(file))).rotate().metadata();
+    return m.width && m.height ? { width: m.width, height: m.height } : null;
+  } catch {
+    return null;
+  }
+}

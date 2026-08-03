@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { db, UPLOAD_DIR } from '../lib/db.js';
 import { removeImage, saveImage } from '../lib/upload.js';
-import { removeThumbs } from '../lib/thumb.js';
+import { imageSize, removeThumbs } from '../lib/thumb.js';
 import { parseRating } from '../lib/event.js';
 import { todayISO, validDate } from '../lib/calendar.js';
 import Nav from '../components/Nav.astro';
@@ -34,19 +34,36 @@ if (Astro.request.method === 'POST') {
   } else {
     try {
       const image = await saveImage(form.get('image'), UPLOAD_DIR);
+      const size = image ? await imageSize(image) : null;
       if (id) {
         const old = db.prepare('SELECT image FROM event WHERE id = ?').get(id);
+        // COALESCE ทุกคอลัมน์ที่เกี่ยวกับรูป — แก้หัวข้อโดยไม่แนบรูปใหม่แล้วรูปกับสัดส่วนเดิมต้องไม่หาย
         db.prepare(
-          'UPDATE event SET title = ?, description = ?, event_date = ?, location = ?, rating = ?, image = COALESCE(?, image) WHERE id = ?',
-        ).run(title, description, eventDate, location, rating, image, id);
+          `UPDATE event
+              SET title = ?, description = ?, event_date = ?, location = ?, rating = ?,
+                  image = COALESCE(?, image),
+                  image_w = COALESCE(?, image_w),
+                  image_h = COALESCE(?, image_h)
+            WHERE id = ?`,
+        ).run(
+          title,
+          description,
+          eventDate,
+          location,
+          rating,
+          image,
+          size?.width ?? null,
+          size?.height ?? null,
+          id,
+        );
         if (image) {
           await removeImage(old?.image, UPLOAD_DIR);
           await removeThumbs(old?.image);
         }
       } else {
         db.prepare(
-          'INSERT INTO event (title, description, event_date, location, rating, image) VALUES (?, ?, ?, ?, ?, ?)',
-        ).run(title, description, eventDate, location, rating, image);
+          'INSERT INTO event (title, description, event_date, location, rating, image, image_w, image_h) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        ).run(title, description, eventDate, location, rating, image, size?.width ?? null, size?.height ?? null);
       }
       return Astro.redirect('/admin', 303);
     } catch (e) {
