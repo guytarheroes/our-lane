@@ -91,6 +91,11 @@ jobs:
           elif [ "$CHECK" != "success" ]; then
             TITLE="❌ CI ไม่ผ่าน — ไม่ได้ deploy"
             COLOR=12597547
+          elif [ "$DEPLOY" = "cancelled" ]; then
+            # cancelled = concurrency group เตะทิ้งเพราะมี commit ใหม่กว่าต่อคิว ไม่ใช่ของพัง
+            # ถ้าเห็นอันนี้รัวทุก commit แปลว่า runner บน Pi ไม่ได้รับงาน
+            TITLE="⏭️ ข้าม deploy — มี commit ใหม่กว่าต่อคิวอยู่"
+            COLOR=9807270
           else
             TITLE="❌ deploy ล้มเหลว"
             COLOR=12597547

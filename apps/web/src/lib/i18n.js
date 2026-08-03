@@ -39,6 +39,11 @@ const DICT = {
     'nav.settings': 'ตั้งค่า',
     'nav.logout': 'ออกจากระบบ',
 
+    // ไทยไม่มีพหูพจน์ — ยังต้องเป็นฟังก์ชันเพราะอังกฤษต้องเติม s
+    'dur.years': (n) => `${n} ปี`,
+    'dur.months': (n) => `${n} เดือน`,
+    'dur.days': (n) => `${n} วัน`,
+
     'home.since': 'นับจาก',
     'home.days': 'วัน',
     'home.hours': 'ชั่วโมง',
@@ -60,6 +65,36 @@ const DICT = {
     'cal.nextMonth': 'เดือนถัดไป',
     'cal.pickMonth': 'เลือกเดือน',
     'cal.weekdays': ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'],
+
+    'admin.new': 'เพิ่มความทรงจำ',
+    'admin.edit': 'แก้ความทรงจำ',
+    'admin.date': 'วันที่',
+    'admin.place': 'สถานที่',
+    'admin.optional': 'ไม่ใส่ก็ได้',
+    'admin.title': 'หัวข้อ',
+    'admin.titleHint': 'วันนี้เกิดอะไรขึ้น',
+    'admin.rate': 'ให้ดาว',
+    'admin.starN': (n) => `${n} ดาว`,
+    'admin.noStars': 'ไม่ให้ดาว',
+    'admin.story': 'เล่าให้ฟัง',
+    'admin.photo': 'รูป',
+    'admin.keepPhoto': 'ไม่เลือกไฟล์ใหม่ = เก็บรูปเดิมไว้',
+    'admin.photoHint': 'jpg · png · webp · gif ไม่เกิน 8MB',
+    'admin.noPhoto': 'no img',
+    'admin.cancel': 'ยกเลิก',
+    'admin.save': 'บันทึก',
+    'admin.saveEdit': 'บันทึกการแก้ไข',
+    'admin.saved': (n) => `ที่บันทึกไว้ ${n} รายการ`,
+    'admin.starsShort': (n) => `${n} จาก 5 ดาว`,
+    'admin.editShort': 'แก้',
+    'admin.delete': 'ลบ',
+    'admin.confirmDelete': 'ลบความทรงจำนี้?',
+
+    // ข้อความ error ถูกโยนมาเป็นคีย์ ไม่ใช่ประโยค — lib จะได้ไม่ต้องรู้ว่าหน้าไหนใช้ภาษาอะไร
+    'err.required': 'ต้องมีหัวข้อและวันที่',
+    'err.saveFailed': 'บันทึกไม่สำเร็จ',
+    'err.fileType': 'รองรับเฉพาะไฟล์ JPEG / PNG / WebP / GIF',
+    'err.fileTooBig': 'ไฟล์ใหญ่เกิน 8MB',
   },
   en: {
     'app.name': 'our memory lane',
@@ -77,7 +112,13 @@ const DICT = {
     'nav.settings': 'Settings',
     'nav.logout': 'Sign out',
 
+    'dur.years': (n) => `${n} year${n === 1 ? '' : 's'}`,
+    'dur.months': (n) => `${n} month${n === 1 ? '' : 's'}`,
+    'dur.days': (n) => `${n} day${n === 1 ? '' : 's'}`,
+
     'home.since': 'since',
+    // ponytail: ตัวนับที่เดินวินาทีใช้รูปพหูพจน์อย่างเดียว ("1 hours" โผล่ 1 ใน 24)
+    // ถ้าจะทำให้ถูกต้องต้องส่งทั้งเอกพจน์/พหูพจน์เข้าไปในสคริปต์ ไม่คุ้มกับตัวเลขที่เปลี่ยนทุกวินาที
     'home.days': 'days',
     'home.hours': 'hours',
     'home.minutes': 'minutes',
@@ -97,6 +138,35 @@ const DICT = {
     'cal.nextMonth': 'Next month',
     'cal.pickMonth': 'Pick a month',
     'cal.weekdays': ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+
+    'admin.new': 'Add a memory',
+    'admin.edit': 'Edit memory',
+    'admin.date': 'Date',
+    'admin.place': 'Place',
+    'admin.optional': 'Optional',
+    'admin.title': 'Title',
+    'admin.titleHint': 'What happened today?',
+    'admin.rate': 'Rating',
+    'admin.starN': (n) => `${n} star${n === 1 ? '' : 's'}`,
+    'admin.noStars': 'No rating',
+    'admin.story': 'The story',
+    'admin.photo': 'Photo',
+    'admin.keepPhoto': 'No new file = keep the current photo',
+    'admin.photoHint': 'jpg · png · webp · gif up to 8MB',
+    'admin.noPhoto': 'no img',
+    'admin.cancel': 'Cancel',
+    'admin.save': 'Save',
+    'admin.saveEdit': 'Save changes',
+    'admin.saved': (n) => `${n} saved`,
+    'admin.starsShort': (n) => `${n} out of 5`,
+    'admin.editShort': 'Edit',
+    'admin.delete': 'Delete',
+    'admin.confirmDelete': 'Delete this memory?',
+
+    'err.required': 'A title and a date are required',
+    'err.saveFailed': 'Could not save',
+    'err.fileType': 'Only JPEG / PNG / WebP / GIF files are accepted',
+    'err.fileTooBig': 'File is larger than 8MB',
   },
 };
 

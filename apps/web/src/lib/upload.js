@@ -43,8 +43,8 @@ export function sniff(bytes) {
  */
 export function pickName(type, size) {
   const ext = type && TYPES.get(type);
-  if (!ext) throw new Error('รองรับเฉพาะไฟล์ JPEG / PNG / WebP / GIF');
-  if (size > MAX_BYTES) throw new Error('ไฟล์ใหญ่เกิน 8MB');
+  if (!ext) throw new Error('err.fileType');
+  if (size > MAX_BYTES) throw new Error('err.fileTooBig');
   return randomUUID() + ext;
 }
 
@@ -55,7 +55,7 @@ export function pickName(type, size) {
  */
 export async function saveImage(file, dir) {
   if (!file || typeof file === 'string' || file.size === 0) return null;
-  if (file.size > MAX_BYTES) throw new Error('ไฟล์ใหญ่เกิน 8MB');
+  if (file.size > MAX_BYTES) throw new Error('err.fileTooBig');
 
   const buf = Buffer.from(await file.arrayBuffer());
   const name = pickName(sniff(buf), buf.byteLength);

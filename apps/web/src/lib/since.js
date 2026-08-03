@@ -24,12 +24,16 @@ export function since(iso, now = new Date()) {
   };
 }
 
-/** "3 ปี 6 เดือน 14 วัน" — หน่วยที่เป็นศูนย์ถูกตัดทิ้ง @param {string} iso @param {Date} [now] */
-export function sinceThai(iso, now = new Date()) {
+/**
+ * "3 ปี 6 เดือน 14 วัน" / "3 years 6 months 14 days" — หน่วยที่เป็นศูนย์ถูกตัดทิ้ง
+ * รับ `t` เข้ามาแทนที่จะ import เอง ไฟล์นี้จึงไม่ต้องรู้จักภาษาใด ๆ
+ * @param {string} iso @param {(key: string, n: number) => string} t @param {Date} [now]
+ */
+export function sinceText(iso, t, now = new Date()) {
   const { years, months, days } = since(iso, now);
   const parts = [];
-  if (years) parts.push(`${years} ปี`);
-  if (months) parts.push(`${months} เดือน`);
-  if (days || parts.length === 0) parts.push(`${days} วัน`);
+  if (years) parts.push(t('dur.years', years));
+  if (months) parts.push(t('dur.months', months));
+  if (days || parts.length === 0) parts.push(t('dur.days', days));
   return parts.join(' ');
 }

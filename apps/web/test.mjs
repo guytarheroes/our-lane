@@ -4,11 +4,12 @@ import { hash, sign, unsign, verify } from './src/lib/auth.js';
 import { MAX_AGE_SEC } from './src/lib/auth.js';
 import { MAX_BYTES, pickName, safeServe, sniff } from './src/lib/upload.js';
 import { reset, tooMany } from './src/lib/ratelimit.js';
-import { since, sinceThai } from './src/lib/since.js';
+import { since, sinceText } from './src/lib/since.js';
 import { monthGrid, shiftMonth, thisMonth, todayISO, validDate, validMonth } from './src/lib/calendar.js';
 import { parseRating, starsText } from './src/lib/event.js';
 import { generateCode, hashCode, normalizeCode, verifyCode } from './src/lib/recovery.js';
 import { validTheme } from './src/lib/theme.js';
+import { dict, validLang } from './src/lib/i18n.js';
 
 const stored = hash('correct horse battery');
 assert.ok(verify('correct horse battery', stored), 'รหัสผ่านที่ถูกต้องต้องผ่าน');
@@ -46,9 +47,9 @@ reset(k);
 assert.equal(tooMany(k, {}, t0), false, 'reset แล้วต้องเริ่มนับใหม่');
 
 assert.match(pickName('image/png', 1024), /^[0-9a-f-]{36}\.png$/, 'ต้องตั้งชื่อไฟล์ใหม่เอง');
-assert.throws(() => pickName('text/html', 10), /รองรับเฉพาะ/, 'ไฟล์ที่ไม่ใช่รูปต้องถูกปฏิเสธ');
-assert.throws(() => pickName(null, 10), /รองรับเฉพาะ/, 'sniff ไม่ออกต้องถูกปฏิเสธ');
-assert.throws(() => pickName('image/png', MAX_BYTES + 1), /ใหญ่เกิน/, 'ไฟล์เกินขนาดต้องถูกปฏิเสธ');
+assert.throws(() => pickName('text/html', 10), /err.fileType/, 'ไฟล์ที่ไม่ใช่รูปต้องถูกปฏิเสธ');
+assert.throws(() => pickName(null, 10), /err.fileType/, 'sniff ไม่ออกต้องถูกปฏิเสธ');
+assert.throws(() => pickName('image/png', MAX_BYTES + 1), /err.fileTooBig/, 'ไฟล์เกินขนาดต้องถูกปฏิเสธ');
 
 // ดูไบต์จริง ไม่ใช่ content-type ที่ client บอก
 const bytes = (...a) => Uint8Array.from(a);
@@ -70,10 +71,15 @@ assert.equal(safeServe('shell.php'), null, 'นามสกุลนอกลิ
 
 const at = (iso) => new Date(`${iso}T12:00:00`);
 assert.deepEqual(since('2023-01-11', at('2026-07-25')), { years: 3, months: 6, days: 14 });
-assert.equal(sinceThai('2023-01-11', at('2026-07-25')), '3 ปี 6 เดือน 14 วัน');
+const th = dict('th');
+const en = dict('en');
+assert.equal(sinceText('2023-01-11', th, at('2026-07-25')), '3 ปี 6 เดือน 14 วัน');
+assert.equal(sinceText('2023-01-11', en, at('2026-07-25')), '3 years 6 months 14 days');
 assert.deepEqual(since('2023-11-11', at('2026-07-25')), { years: 2, months: 8, days: 14 }, 'ยืมข้ามปี');
-assert.equal(sinceThai('2025-07-25', at('2026-07-25')), '1 ปี', 'หน่วยที่เป็นศูนย์ต้องหายไป');
-assert.equal(sinceThai('2026-07-25', at('2026-07-25')), '0 วัน', 'วันแรกต้องไม่ได้สตริงว่าง');
+assert.equal(sinceText('2025-07-25', th, at('2026-07-25')), '1 ปี', 'หน่วยที่เป็นศูนย์ต้องหายไป');
+assert.equal(sinceText('2025-07-25', en, at('2026-07-25')), '1 year', 'อังกฤษต้องไม่เติม s ตอนเป็นหนึ่ง');
+assert.equal(sinceText('2026-07-25', th, at('2026-07-25')), '0 วัน', 'วันแรกต้องไม่ได้สตริงว่าง');
+assert.equal(sinceText('2026-07-25', en, at('2026-07-25')), '0 days');
 // 31 ม.ค. → 1 มี.ค. คือเคสที่ "บวกหนึ่งเดือน" ไม่มีอยู่จริงในปฏิทิน — ห้ามได้วันติดลบ
 assert.deepEqual(since('2024-01-31', at('2024-03-01')), { years: 0, months: 0, days: 30 });
 for (const iso of ['2023-01-11', '2024-01-31', '2024-02-29', '2023-12-31']) {
@@ -135,6 +141,15 @@ assert.equal(validTheme('"><script>'), 'normal');
 assert.equal(validTheme('dark'), 'normal', 'ธีมเก่าที่ไม่มีแล้วต้องตกไปค่าตั้งต้น');
 assert.equal(validTheme(undefined), 'normal');
 assert.equal(validTheme('INVERT'), 'normal', 'ตัวใหญ่ไม่นับ ต้องตรงเป๊ะ');
+
+// ---- ภาษา ----
+assert.equal(validLang('en'), 'en');
+assert.equal(validLang('th'), 'th');
+assert.equal(validLang('jp'), 'th', 'ภาษาที่ไม่มีต้องตกไปไทย');
+assert.equal(validLang(undefined), 'th');
+assert.equal(en('nav.timeline'), 'Timeline');
+assert.equal(en('ไม่มีคีย์นี้'), 'ไม่มีคีย์นี้', 'คีย์ที่ไม่มีต้องคืนตัวมันเอง ไม่ใช่ undefined');
+assert.equal(en('cal.pics'), th('cal.pics'), 'Pics/Memo เป็นคำในดีไซน์ ต้องเหมือนกันสองภาษา');
 
 // ---- ปฏิทิน ----
 assert.equal(validMonth('2026-07'), '2026-07');
