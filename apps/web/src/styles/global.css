@@ -31,6 +31,69 @@
   --alt-muted: #416b83;
 }
 
+/* โหมดมืด — ค่าชุดนี้ถูกประกาศ 2 รอบโดยตั้งใจ **แก้ที่ไหนต้องแก้อีกที่ด้วย**
+   CSS รวม media query กับ attribute selector ไว้ในกฎเดียวกันไม่ได้
+   ทางที่ไม่ต้องซ้ำคือ light-dark() แต่ต้องการ Safari 17.5+ ซึ่งเสี่ยงเกินไปสำหรับเว็บนี้
+   (บั๊กที่เจอมาแล้วรอบนี้ 3 ใน 5 อันเป็นเรื่อง WebKit ล้วน ๆ)
+
+   1) ผู้ใช้เลือก "มืด" เอง */
+:root[data-theme="dark"] {
+  --bg: #1a1114;
+  --surface: #251a1e;
+  --field: #201519;
+  --text: #faf7ea;
+  --body: #e3d5d3;
+  --muted: #b39a9f;
+  --line: #3b2a2f;
+  --accent: #b03a4c;
+  --accent-ink: #ec97a5;
+  --on-accent: #faf7ea;
+  --star-empty: #5e3a43;
+
+  --soft: #e1aebc;
+  --soft-bg: #2f1d24;
+  --soft-line: #4d3039;
+  --soft-ink: #f6e0e6;
+  --soft-muted: #d8a2b2;
+
+  --alt: #7fa8bd;
+  --alt-bg: #16232a;
+  --alt-field: #121d23;
+  --alt-line: #2e4552;
+  --alt-ink: #dcebf3;
+  --alt-muted: #a0c3d6;
+}
+
+/* 2) ผู้ใช้เลือก "ตามระบบ" (ไม่มี data-theme) แล้วเครื่องตั้งมืด */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+  --bg: #1a1114;
+  --surface: #251a1e;
+  --field: #201519;
+  --text: #faf7ea;
+  --body: #e3d5d3;
+  --muted: #b39a9f;
+  --line: #3b2a2f;
+  --accent: #b03a4c;
+  --accent-ink: #ec97a5;
+  --on-accent: #faf7ea;
+  --star-empty: #5e3a43;
+
+  --soft: #e1aebc;
+  --soft-bg: #2f1d24;
+  --soft-line: #4d3039;
+  --soft-ink: #f6e0e6;
+  --soft-muted: #d8a2b2;
+
+  --alt: #7fa8bd;
+  --alt-bg: #16232a;
+  --alt-field: #121d23;
+  --alt-line: #2e4552;
+  --alt-ink: #dcebf3;
+  --alt-muted: #a0c3d6;
+  }
+}
+
 /* ไม่มี dark mode — palette นี้เป็นโทนสว่างล้วน พื้นหลังเป็น Old lace เสมอ
    อยากได้ dark กลับมา: เพิ่มบล็อก @media (prefers-color-scheme: dark) ที่นี่
    แล้วประกาศ token ชุดเดิมทับ ไม่ต้องแตะไฟล์อื่น */

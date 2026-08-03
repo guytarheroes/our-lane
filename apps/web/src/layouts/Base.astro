@@ -1,22 +1,29 @@
 ---
 import '../styles/global.css';
+import { THEME_COOKIE, validTheme } from '../lib/theme.js';
 
 interface Props {
   title?: string;
 }
 
 const { title = 'Our Memory Lane' } = Astro.props;
+
+// อ่านจาก cookie แล้ว render ไปเลยตั้งแต่ฝั่ง server — ไม่มีจอกระพริบตอนโหลด
+// แบบที่ theme switcher ซึ่งอ่าน localStorage ด้วย JS มักเป็น
+// 'system' = ไม่ใส่ attribute ปล่อยให้ prefers-color-scheme ใน CSS ทำงานเอง
+const theme = validTheme(Astro.cookies.get(THEME_COOKIE)?.value);
 ---
 
 <!doctype html>
-<html lang="th">
+<html lang="th" data-theme={theme === 'system' ? undefined : theme}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
-    <meta name="theme-color" content="#fdf6ea" />
-    <!-- บอกเบราว์เซอร์ว่าหน้านี้มีแต่โทนสว่าง จะได้ไม่เอา dark mode ของ UA มาทับ form control -->
-    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content={theme === 'dark' ? '#1a1114' : '#faf7ea'} />
+    {/* บอกเบราว์เซอร์ว่าหน้านี้รองรับโทนไหน — native control (ปฏิทินใน input date, scrollbar)
+        จะได้เลือกสีให้ตรงกับที่เรา render ไม่งั้นช่องวันที่จะเป็นสีขาวโพลนบนพื้นมืด */}
+    <meta name="color-scheme" content={theme === 'system' ? 'light dark' : theme} />
     <title>{title}</title>
     <link
       rel="icon"

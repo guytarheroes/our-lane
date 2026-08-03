@@ -8,6 +8,7 @@ import { since, sinceThai } from './src/lib/since.js';
 import { monthGrid, shiftMonth, thisMonth, todayISO, validDate, validMonth } from './src/lib/calendar.js';
 import { parseRating, starsText } from './src/lib/event.js';
 import { generateCode, hashCode, normalizeCode, verifyCode } from './src/lib/recovery.js';
+import { isMobileUA, validTheme } from './src/lib/theme.js';
 
 const stored = hash('correct horse battery');
 assert.ok(verify('correct horse battery', stored), 'รหัสผ่านที่ถูกต้องต้องผ่าน');
@@ -125,6 +126,22 @@ assert.ok(!verifyCode('ZZZZZ-ZZZZZ-ZZZZZ', codeHash), 'รหัสผิดต�
 assert.ok(!verifyCode(code, null), 'ยังไม่เคยสร้างรหัสกู้คืนต้องไม่ผ่าน');
 assert.ok(!verifyCode('', codeHash));
 assert.equal(hashCode('สั้นไป'), null, 'รหัสรูปแบบผิดต้อง hash ไม่ได้');
+
+// ---- ธีม ----
+assert.equal(validTheme('dark'), 'dark');
+assert.equal(validTheme('light'), 'light');
+assert.equal(validTheme('system'), 'system');
+// cookie แก้ได้จากฝั่ง client — ค่าที่ไม่รู้จักต้องตกไป system ไม่ใช่หลุดลง data-theme ดิบ ๆ
+assert.equal(validTheme('"><script>'), 'system');
+assert.equal(validTheme(undefined), 'system');
+assert.equal(validTheme(''), 'system');
+assert.equal(validTheme('DARK'), 'system', 'ตัวใหญ่ไม่นับ ต้องตรงเป๊ะ');
+
+assert.ok(isMobileUA('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148'));
+assert.ok(isMobileUA('Mozilla/5.0 (Linux; Android 14) Chrome/120.0 Mobile Safari/537.36'));
+assert.ok(!isMobileUA('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120.0 Safari/537.36'));
+assert.ok(!isMobileUA('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0 Safari/537.36'));
+assert.ok(!isMobileUA(null), 'ไม่มี UA ต้องไม่ crash');
 
 // ---- ปฏิทิน ----
 assert.equal(validMonth('2026-07'), '2026-07');

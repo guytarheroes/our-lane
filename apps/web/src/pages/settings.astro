@@ -7,6 +7,7 @@ import { reset, tooMany } from '../lib/ratelimit.js';
 import { setSetting, siteSettings } from '../lib/settings.js';
 import { todayISO, validDate } from '../lib/calendar.js';
 import { generateCode, hashCode } from '../lib/recovery.js';
+import { THEME_COOKIE, THEME_COOKIE_OPTIONS, isMobileUA, validTheme } from '../lib/theme.js';
 
 const me = Astro.locals.user;
 let error = '';
@@ -56,6 +57,11 @@ if (Astro.request.method === 'POST') {
     }
   }
 
+  if (intent === 'theme') {
+    Astro.cookies.set(THEME_COOKIE, validTheme(form.get('theme')), THEME_COOKIE_OPTIONS);
+    return Astro.redirect('/settings?saved=theme', 303);
+  }
+
   if (intent === 'recovery') {
     freshCode = generateCode();
     // เก็บเป็น hash เหมือนรหัสผ่าน — สร้างใหม่ทับของเดิม อันเก่าใช้ไม่ได้ทันที
@@ -85,10 +91,28 @@ const savedMessage = {
   profile: 'บันทึกชื่อแล้ว',
   password: 'เปลี่ยนรหัสผ่านแล้ว — อุปกรณ์อื่นถูกให้ออกจากระบบทั้งหมด',
   site: 'บันทึกค่าเว็บแล้ว',
+  theme: 'เปลี่ยนธีมแล้ว',
   recovered: 'ตั้งรหัสผ่านใหม่แล้ว — รหัสกู้คืนอันเดิมถูกใช้ไปแล้ว สร้างอันใหม่เก็บไว้ด้วย',
 }[saved ?? ''];
 
 const site = siteSettings();
+const theme = validTheme(Astro.cookies.get(THEME_COOKIE)?.value);
+const onMobile = isMobileUA(Astro.request.headers.get('user-agent'));
+
+// ไอคอนวาดเอง ไม่ใช้ icon library ตามกฎห้ามเพิ่ม dependency — 24x24 stroke ตาม currentColor
+const ICONS = {
+  phone: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.6h2"/>',
+  monitor: '<rect x="2.5" y="4" width="19" height="12.5" rx="2"/><path d="M8.5 20.5h7M12 16.5v4"/>',
+  light:
+    '<circle cx="12" cy="12" r="4"/><path d="M12 2v2.4M12 19.6V22M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2 12h2.4M19.6 12H22M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/>',
+  dark: '<path d="M20.2 14.8A8.6 8.6 0 0 1 9.2 3.8a8.6 8.6 0 1 0 11 11z"/>',
+};
+
+const themeOptions = [
+  { value: 'system', label: 'ตามเครื่อง', icon: onMobile ? ICONS.phone : ICONS.monitor },
+  { value: 'light', label: 'สว่าง', icon: ICONS.light },
+  { value: 'dark', label: 'มืด', icon: ICONS.dark },
+];
 const hasRecovery = Boolean(
   db.prepare('SELECT recovery FROM user WHERE id = ?').get(me.id)?.recovery,
 );
@@ -124,6 +148,44 @@ const heading = 'font-display text-[17px] leading-[1.5] text-text';
     }
 
     <div class="grid gap-5">
+      <form method="post" class={card}>
+        <input type="hidden" name="intent" value="theme" />
+        <h2 class={heading}>ธีม</h2>
+        <p class="text-[12.5px] leading-[1.8] text-muted">
+          จำไว้ในเบราว์เซอร์นี้ — เปลี่ยนเครื่องต้องเลือกใหม่
+        </p>
+        {/* ปุ่มแต่ละอันส่งค่าของตัวเองผ่าน name/value ของ <button> กดทีเดียวจบ
+            ไม่ต้องมีปุ่มบันทึกแยก และไม่ต้องใช้ JS สักบรรทัด */}
+        <div class="flex gap-1.5 rounded-full border border-line bg-field p-1">
+          {
+            themeOptions.map((opt) => (
+              <button
+                name="theme"
+                value={opt.value}
+                aria-current={theme === opt.value ? 'true' : undefined}
+                class:list={[
+                  'flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-full text-[13px] font-medium',
+                  theme === opt.value ? 'bg-accent text-on-accent' : 'text-muted hover:bg-surface',
+                ]}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  class="size-4 flex-none"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                  set:html={opt.icon}
+                />
+                {opt.label}
+              </button>
+            ))
+          }
+        </div>
+      </form>
+
       <form method="post" class={card}>
         <input type="hidden" name="intent" value="profile" />
         <h2 class={heading}>บัญชี</h2>
