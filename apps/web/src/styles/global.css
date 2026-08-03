@@ -24,7 +24,7 @@
   --soft-bg: #e1aebc;
   --soft-line: #85293633;
   --soft-ink: #852936;
-  --soft-muted: #852936b8;
+  --soft-muted: #852936;
 
   --alt: #c5d9e2;
   --alt-bg: #c5d9e2;
@@ -53,7 +53,7 @@
   --soft-bg: #e1aebc;
   --soft-line: #85293640;
   --soft-ink: #852936;
-  --soft-muted: #852936b8;
+  --soft-muted: #852936;
 
   --alt: #c5d9e2;
   --alt-bg: #c5d9e2;
@@ -147,6 +147,15 @@
    custom property สืบทอดลงลูกได้ จึงประกาศชุดหมึกใหม่บนตัวการ์ดเอง
    ข้างในการ์ดเลยกลับไปเป็นเชอร์รี่บนครีมเหมือนโหมดปกติทุกอย่าง รวมถึงปุ่มด้วย
    ผูกกับคลาส .bg-surface ที่การ์ดทุกใบใช้อยู่ — เปลี่ยนวิธีทำพื้นการ์ดเมื่อไหร่ต้องมาแก้ตรงนี้ */
+:root[data-theme="invert"] .bg-soft-bg,
+:root[data-theme="invert"] .bg-alt-bg {
+  --accent: #852936;
+  --accent-ink: #852936;
+  --on-accent: #faf7ea;
+  --star-empty: #85293659;
+  color: #852936;
+}
+
 :root[data-theme="invert"] .bg-surface {
   --text: #852936;
   --body: #852936;
