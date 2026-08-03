@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { db } from '../lib/db.js';
 import { sinceThai } from '../lib/since.js';
+import { starsText } from '../lib/event.js';
 
 const startDate = process.env.START_DATE ?? '2023-01-11';
 const coupleName = process.env.COUPLE_NAME ?? 'ทางเดินความทรงจำของเราสองคน';
@@ -24,7 +25,6 @@ const seconds = Math.floor(elapsed / 1000) % 60;
 const wrap = 'mx-auto w-full max-w-5xl px-5 sm:px-12';
 const stamp = 'font-mono text-[10.5px] font-medium uppercase tracking-[0.1em] sm:text-[11px]';
 const heading = 'font-display text-pretty';
-const stars = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
 ---
 
 <Base title={coupleName}>
@@ -138,7 +138,7 @@ const stars = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
                           class="mt-2 text-[14px] tracking-[0.12em] text-accent"
                           aria-label={`ให้ ${e.rating} จาก 5 ดาว`}
                         >
-                          <span aria-hidden="true">{stars(e.rating)}</span>
+                          <span aria-hidden="true">{starsText(e.rating)}</span>
                         </p>
                       )}
                       {e.description && (
@@ -171,7 +171,7 @@ const stars = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
                         class="mt-2 text-[14px] tracking-[0.12em] text-accent"
                         aria-label={`ให้ ${e.rating} จาก 5 ดาว`}
                       >
-                        <span aria-hidden="true">{stars(e.rating)}</span>
+                        <span aria-hidden="true">{starsText(e.rating)}</span>
                       </p>
                     )}
                     <p class="mt-2 text-[15px] leading-[1.95] text-alt-ink/85 sm:mt-3 sm:text-[17px]">
@@ -202,7 +202,7 @@ const stars = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
                         class="mt-2 text-[14px] tracking-[0.12em] text-accent"
                         aria-label={`ให้ ${e.rating} จาก 5 ดาว`}
                       >
-                        <span aria-hidden="true">{stars(e.rating)}</span>
+                        <span aria-hidden="true">{starsText(e.rating)}</span>
                       </p>
                     )}
                     {e.location && (

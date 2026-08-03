@@ -52,13 +52,18 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 
 **1. ห้ามเพิ่ม dependency** ทั้งเว็บมี 4 ตัว (astro, @astrojs/node, tailwindcss, @tailwindcss/vite)
 ไม่มี UI kit ไม่มี icon package ไม่มี animation library — icon ใช้ inline SVG หรือ emoji
-อยากได้ฟอนต์เฉพาะ ต้อง self-host: วางไฟล์ใน `apps/web/public/fonts/` แล้ว `@font-face`
+ฟอนต์ต้อง self-host เสมอ — ตอนนี้คือ **Bai Jamjuree** (SIL OFL) อยู่ใน `apps/web/public/fonts/`
+โหลดเฉพาะ subset `thai` + `latin` น้ำหนัก 400/500/600 รวม 6 ไฟล์ 76KB
 **ห้ามลิงก์ Google Fonts หรือ CDN ใด ๆ** เพราะ origin อยู่วงในไม่มีเน็ตออก
 
 **2. Tailwind v4 ไม่มี `tailwind.config.js`** เพิ่มสีใหม่ต้องแก้ **2 ที่** ใน `global.css`:
 `:root` → `@theme inline` ถ้าลืมที่ใดที่หนึ่ง utility class จะไม่มีอยู่จริง
 
-**3. ไม่มี dark mode** palette เป็นโทนสว่างล้วน พื้นหลังเป็น Old lace เสมอ
+**3. ไฟล์ใน `public/` ไม่ผ่านด่านล็อกอิน** static handler ทำงานก่อน middleware
+ฟอนต์จึงโหลดได้ตอนยังไม่ล็อกอิน (ตั้งใจ) แต่**ห้ามเอารูปหรืออะไรที่เป็นส่วนตัวไปวางที่นั่น**
+รูปที่ user อัปโหลดอยู่ใน `$DATA_DIR/uploads` เสิร์ฟผ่าน route จึงถูกกันตามปกติ
+
+**4. ไม่มี dark mode** palette เป็นโทนสว่างล้วน พื้นหลังเป็น Old lace เสมอ
 ห้ามใช้ `dark:` prefix ห้ามทำปุ่ม toggle ห้ามเก็บ theme ลง localStorage
 
 **4. เว็บต้องอ่านได้เมื่อ JS ไม่ทำงาน** สองจุดนี้คือหัวใจ:
@@ -157,8 +162,8 @@ Timeline ความทรงจำของคู่รัก 2 คน โฮ�
 
 คู่สีทุกคู่ผ่าน WCAG AA แล้ว (ตัวปกติ ≥ 4.5:1, หัวข้อ ≥ 3:1) — เปลี่ยนค่าแล้ววัดใหม่ด้วย
 
-ฟอนต์: `--font-display` (Layiji Mahaniyom → Noto Serif Thai → fallback) สำหรับหัวข้อ, `--font-body` (Sarabun → Noto Sans Thai)
-**ยังไม่มีไฟล์ฟอนต์จริงในเครื่อง** — stack fallback ไป system font เงียบ ๆ ได้ไฟล์มาเมื่อไหร่ วางใน `public/fonts/` แล้วเพิ่ม `@font-face`
+ฟอนต์: **Bai Jamjuree** ทั้ง `--font-display` (หัวข้อ น้ำหนัก 600) และ `--font-body` (เนื้อความ 400)
+ไฟล์อยู่ `public/fonts/` เสิร์ฟจาก origin เอง ไม่มี request ออกนอกเลย
 
 * `.pulse` — จุดเต้น 2.4s (`ml-pulse`) บน eyebrow และใน empty state
 * `.js .reveal` / `.js .reveal.in` — fade + เลื่อนขึ้น 24px

@@ -90,7 +90,7 @@ const hatch =
     >
       {editing && <input type="hidden" name="id" value={editing.id} />}
 
-      <div class="grid grid-cols-2 gap-3 sm:grid-cols-[180px_1fr] sm:gap-3.5">
+      <div class="grid gap-3.5 sm:grid-cols-[180px_1fr]">
         <label class={label}>
           วันที่
           <input class={input} type="date" name="event_date" value={editing?.event_date} required />
@@ -231,7 +231,7 @@ const hatch =
                     {
                       e.rating && (
                         <span class="text-accent" aria-label={`${e.rating} จาก 5 ดาว`}>
-                          <span aria-hidden="true">{'★'.repeat(e.rating)}</span>
+                          <span aria-hidden="true">{'★'.repeat(parseRating(e.rating) ?? 0)}</span>
                         </span>
                       )
                     }

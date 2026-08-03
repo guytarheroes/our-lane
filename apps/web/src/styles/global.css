@@ -26,9 +26,61 @@
    อยากได้ dark กลับมา: เพิ่มบล็อก @media (prefers-color-scheme: dark) ที่นี่
    แล้วประกาศ token ชุดเดิมทับ ไม่ต้องแตะไฟล์อื่น */
 
-/* ยังไม่มีไฟล์ฟอนต์ในเครื่อง — stack นี้ fallback ไป system font เงียบ ๆ
-   ได้ Layiji Mahaniyom มาเมื่อไหร่: วางใน public/fonts/ แล้วเพิ่ม @font-face
-   (font-display: swap) ที่นี่ ห้ามลิงก์ CDN — origin ไม่มีเน็ตออก */
+/* Bai Jamjuree (SIL OFL 1.1) — self-host ใน public/fonts/ ห้ามลิงก์ Google Fonts
+   เพราะ origin อยู่วงในไม่มีเน็ตออก โหลดมาเฉพาะ subset thai + latin (76KB รวม 6 ไฟล์)
+   font-display: swap = อ่านข้อความได้ทันทีด้วย system font ระหว่างรอฟอนต์โหลด */
+@font-face {
+  font-family: 'Bai Jamjuree';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/bai-jamjuree-400-thai.woff2) format('woff2');
+  unicode-range: U+02D7, U+0303, U+0331, U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+@font-face {
+  font-family: 'Bai Jamjuree';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/bai-jamjuree-400-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Bai Jamjuree';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(/fonts/bai-jamjuree-500-thai.woff2) format('woff2');
+  unicode-range: U+02D7, U+0303, U+0331, U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+@font-face {
+  font-family: 'Bai Jamjuree';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(/fonts/bai-jamjuree-500-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Bai Jamjuree';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(/fonts/bai-jamjuree-600-thai.woff2) format('woff2');
+  unicode-range: U+02D7, U+0303, U+0331, U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+@font-face {
+  font-family: 'Bai Jamjuree';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(/fonts/bai-jamjuree-600-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Bai Jamjuree ไม่มีน้ำหนักหนาแบบ serif เดิม — ให้หัวข้อใช้ 600 จะได้แยกจาก body ออก */
+.font-display { font-weight: 600; }
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -48,8 +100,8 @@
   --color-alt-ink: var(--alt-ink);
   --color-alt-muted: var(--alt-muted);
 
-  --font-display: "Layiji Mahaniyom", "Noto Serif Thai", "Sarabun", "Noto Sans Thai", serif;
-  --font-body: "Sarabun", "Noto Sans Thai", "Leelawadee UI", system-ui, sans-serif;
+  --font-display: "Bai Jamjuree", "Noto Sans Thai", system-ui, sans-serif;
+  --font-body: "Bai Jamjuree", "Noto Sans Thai", "Leelawadee UI", system-ui, sans-serif;
 }
 
 :focus-visible {

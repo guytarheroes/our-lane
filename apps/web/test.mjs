@@ -5,8 +5,8 @@ import { MAX_AGE_SEC } from './src/lib/auth.js';
 import { MAX_BYTES, pickName, safeServe, sniff } from './src/lib/upload.js';
 import { reset, tooMany } from './src/lib/ratelimit.js';
 import { since, sinceThai } from './src/lib/since.js';
-import { monthGrid, shiftMonth, thisMonth, validMonth } from './src/lib/calendar.js';
-import { parseRating } from './src/lib/event.js';
+import { monthGrid, shiftMonth, thisMonth, todayISO, validMonth } from './src/lib/calendar.js';
+import { parseRating, starsText } from './src/lib/event.js';
 
 const stored = hash('correct horse battery');
 assert.ok(verify('correct horse battery', stored), 'รหัสผ่านที่ถูกต้องต้องผ่าน');
@@ -85,12 +85,30 @@ assert.equal(parseRating(-3), null, 'ติดลบ');
 assert.equal(parseRating('3.7'), 3, 'ทศนิยมต้องถูกตัด');
 assert.equal(parseRating(Infinity), null);
 
+assert.equal(starsText(3), '★★★☆☆');
+assert.equal(starsText(5), '★★★★★');
+assert.equal(starsText(null), '', 'ไม่มีดาว = สตริงว่าง');
+// '☆'.repeat(5 - 6) throw RangeError — ถ้าไม่กรองก่อน หน้าไทม์ไลน์ทั้งหน้าจะ 500 เพราะข้อมูลแถวเดียว
+assert.equal(starsText(6), '', 'ค่าหลุดขอบเขตจาก DB ต้องไม่ทำให้พัง');
+assert.equal(starsText(-1), '');
+
 // ---- ปฏิทิน ----
 assert.equal(validMonth('2026-07'), '2026-07');
 assert.equal(validMonth('2026-13'), null, 'เดือน 13 ไม่มีจริง');
 assert.equal(validMonth('2026-00'), null, 'เดือน 0 ไม่มีจริง');
 assert.equal(validMonth('2026-7'), null, 'ต้อง pad ศูนย์ — ฟอร์มเลือกเดือนส่ง MM มาเสมอ');
 assert.equal(validMonth('null-07'), null, 'ฟอร์มไม่ส่ง y มา ต้องตกไป fallback ไม่ใช่พัง');
+// new Date(1, 0, 1) คือปี 1901 ไม่ใช่ ค.ศ. 1 — หัวเดือนกับตารางจะคนละปีกัน
+assert.equal(validMonth('0001-01'), null, 'ปีที่ JS Date ตีความผิดต้องไม่ผ่าน');
+assert.equal(validMonth('0099-12'), null);
+assert.equal(validMonth('1900-01'), '1900-01', 'ขอบล่างที่ยอมรับ');
+assert.equal(validMonth('2999-12'), '2999-12', 'ขอบบนที่ยอมรับ');
+assert.equal(validMonth('3000-01'), null);
+
+// วันนี้ต้องคิดจากเวลาท้องถิ่น ไม่ใช่ UTC — container รัน TZ=UTC แต่คนใช้อยู่ UTC+7
+assert.match(todayISO(), /^\d{4}-\d{2}-\d{2}$/);
+assert.equal(todayISO(new Date(2026, 6, 26, 3, 0)), '2026-07-26', 'ตี 3 ยังเป็นวันเดิม');
+assert.equal(todayISO(new Date(2026, 0, 5)), '2026-01-05', 'ต้อง pad ศูนย์');
 assert.equal(validMonth('../../etc/passwd'), null, 'query string เชื่อไม่ได้');
 assert.equal(validMonth(null), null);
 assert.match(thisMonth(new Date('2026-01-05T12:00:00')), /^\d{4}-\d{2}$/);

@@ -13,14 +13,15 @@ const HEADERS = {
 
 // ทั้งเว็บเป็นของส่วนตัว — ต้องล็อกอินก่อนถึงจะเห็นอะไรก็ตาม รวมถึงรูปใน /uploads
 // allowlist ไม่ใช่ blocklist: หน้าใหม่ที่เพิ่มทีหลังจะถูกกันไว้เองโดยไม่ต้องจำมาแก้ที่นี่
+// หมายเหตุ: ไฟล์ static (dist/client — ทั้ง /_astro/* และของใน public/) ถูกเสิร์ฟโดย
+// handler ที่ทำงาน "ก่อน" middleware จึงไม่ผ่านด่านนี้เลย → อย่าวางอะไรที่เป็นความลับใน public/
 const PUBLIC = new Set(['/login', '/logout']);
-const isBuildAsset = (path) => path.startsWith('/_astro/');
 
 export const onRequest = defineMiddleware(async (ctx, next) => {
   ctx.locals.userId = unsign(ctx.cookies.get('session')?.value);
 
   const { pathname } = ctx.url;
-  const open = PUBLIC.has(pathname) || isBuildAsset(pathname);
+  const open = PUBLIC.has(pathname);
 
   const res = !open && !ctx.locals.userId ? ctx.redirect('/login') : await next();
 

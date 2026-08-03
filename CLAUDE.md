@@ -35,9 +35,12 @@ schema ถูกสร้างด้วย `CREATE TABLE IF NOT EXISTS` ตอ�
 **session คือ cookie ที่เซ็น HMAC** ไม่มีตาราง session — `sign()`/`unsign()` ใน `src/lib/auth.js`
 token เซ็นเวลาที่ออกไปด้วยและตรวจอายุ 30 วันฝั่ง server (cookie ที่หลุดจะหมดอายุเอง)
 
-**`src/middleware.js` กันทั้งเว็บด้วย allowlist** เปิดแค่ `/login`, `/logout`, `/_astro/*`
+**`src/middleware.js` กันทั้งเว็บด้วย allowlist** เปิดแค่ `/login` กับ `/logout`
 นอกนั้นเด้งไป `/login` หมด รวมถึง `/uploads/*` — **หน้าใหม่ที่เพิ่มทีหลังถูกกันให้อัตโนมัติ**
 ไม่ต้องกลับมาแก้ middleware และหน้าไหนก็ไม่ต้องเช็ก auth ซ้ำ
+
+**ยกเว้นไฟล์ static** (`/_astro/*` และทุกอย่างใน `public/`) ที่ handler เสิร์ฟก่อนถึง middleware
+จึงไม่ผ่านด่านเลย — ฟอนต์อยู่ตรงนั้นได้ แต่ห้ามเอาอะไรที่เป็นส่วนตัวไปวาง
 
 **สมัครสมาชิกได้แค่ 2 คน** `login.astro` นับ user แล้วซ่อนฟอร์มสมัครเมื่อครบ — นี่คือระบบสิทธิ์ทั้งหมดที่มี
 ไม่มี role ไม่มี ownership ต่อ event

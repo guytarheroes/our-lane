@@ -10,3 +10,14 @@ export function parseRating(raw) {
   if (!Number.isFinite(n) || n < 1 || n > 5) return null;
   return n;
 }
+
+/**
+ * "★★★☆☆" — กรองผ่าน parseRating ก่อนเสมอ
+ * ถ้าเชื่อค่าใน DB ตรง ๆ แล้วเจอ rating = 6 จะได้ '☆'.repeat(-1) ซึ่ง throw RangeError
+ * แล้วหน้าไทม์ไลน์ทั้งหน้าจะ 500 เพราะข้อมูลแถวเดียว
+ * @param {unknown} raw
+ */
+export function starsText(raw) {
+  const n = parseRating(raw);
+  return n ? '★'.repeat(n) + '☆'.repeat(5 - n) : '';
+}

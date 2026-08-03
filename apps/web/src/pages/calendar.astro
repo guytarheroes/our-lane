@@ -1,7 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
 import { db } from '../lib/db.js';
-import { monthGrid, shiftMonth, thisMonth, validMonth } from '../lib/calendar.js';
+import { monthGrid, shiftMonth, thisMonth, todayISO, validMonth } from '../lib/calendar.js';
+import { parseRating } from '../lib/event.js';
 
 const coupleName = process.env.COUPLE_NAME ?? 'ทางเดินความทรงจำของเราสองคน';
 
@@ -44,7 +45,7 @@ const canNext = next <= (hiMonth && hiMonth > thisMonth() ? hiMonth : thisMonth(
 const monthName = new Intl.DateTimeFormat('th-TH', { month: 'long', year: 'numeric' });
 const monthOnly = new Intl.DateTimeFormat('th-TH', { month: 'long' });
 const asDate = (iso) => new Date(`${iso}-01T00:00:00`);
-const today = new Date().toISOString().slice(0, 10);
+const today = todayISO();
 
 const cells = monthGrid(month);
 const weekdays = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
@@ -338,7 +339,7 @@ const ring = (n, total) => (total > 0 ? Math.min(n / total, 1) : 0);
                       )}
                       {first.rating && (
                         <span class="absolute bottom-0.5 left-0.5 rounded bg-text/75 px-1 font-mono text-[8.5px] leading-[1.7] text-on-accent sm:bottom-1 sm:left-1 sm:text-[9.5px]">
-                          ★{first.rating}
+                          ★{parseRating(first.rating)}
                         </span>
                       )}
                       {list.length > 1 && (
