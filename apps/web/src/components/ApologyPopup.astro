@@ -1,0 +1,93 @@
+{/* ชั่วคราว: แสดงทั้งผู้เยี่ยมชมและผู้ที่ล็อกอินแล้ว */}
+<section
+  id="apology-popup"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-accent/45 p-5 backdrop-blur-sm"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="apology-title"
+>
+  <div class="apology-card relative w-full max-w-md overflow-hidden rounded-[2rem] border border-line bg-surface px-6 pb-7 pt-8 text-center shadow-2xl sm:px-9">
+    <button
+      id="close-apology"
+      class="absolute right-4 top-4 grid size-10 place-items-center rounded-full border border-line text-xl leading-none text-muted transition hover:bg-soft-bg hover:text-accent"
+      type="button"
+      aria-label="ปิดข้อความขอโทษ"
+    >
+      <span aria-hidden="true">×</span>
+    </button>
+
+    <img
+      src="/images/apology-lilies.png"
+      alt="ช่อดอกลิลลี่สีชมพูและสีขาว"
+      class="apology-flowers mx-auto -mt-3 w-full max-w-[17rem]"
+    />
+    <p class="mt-1 text-[13px] font-medium tracking-[0.16em] text-muted">FOR YOU, WITH LOVE</p>
+    <h2 id="apology-title" class="font-display mt-3 text-[27px] leading-[1.45] text-text sm:text-[31px]">
+      ขอโทษนะคะบิบี๋
+    </h2>
+    <p class="mx-auto mt-3 max-w-[30ch] text-[15px] leading-[1.9] text-body">
+      เค้าเสียใจที่ทำให้บิบี๋ไม่สบายใจ<br />
+      ขอให้ช่อดอกลิลลี่นี้แทนคำขอโทษจากใจเรานะ
+    </p>
+    <button
+      id="accept-apology"
+      class="mt-6 min-h-11 rounded-full bg-accent px-6 text-[14.5px] font-medium text-on-accent transition hover:opacity-90"
+      type="button"
+    >
+      รับดอกไม้ไว้แล้ว 💐
+    </button>
+  </div>
+</section>
+
+<script>
+  const popup = document.querySelector('#apology-popup');
+  const closeButton = document.querySelector('#close-apology');
+  const acceptButton = document.querySelector('#accept-apology');
+
+  const closePopup = () => {
+    popup?.classList.add('apology-popup--closing');
+    window.setTimeout(() => popup?.remove(), 180);
+  };
+
+  closeButton?.addEventListener('click', closePopup);
+  acceptButton?.addEventListener('click', closePopup);
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closePopup();
+  });
+</script>
+
+<style>
+  .apology-card {
+    animation: apology-card-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .apology-flowers {
+    animation: apology-flowers-in 520ms 80ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .apology-popup--closing {
+    animation: apology-popup-out 180ms ease-in both;
+  }
+
+  @keyframes apology-card-in {
+    from { opacity: 0; transform: translateY(12px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes apology-flowers-in {
+    from { opacity: 0; transform: translateY(14px) scale(0.9) rotate(-2deg); }
+    to { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+  }
+
+  @keyframes apology-popup-out {
+    to { opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .apology-card,
+    .apology-flowers,
+    .apology-popup--closing {
+      animation: none;
+    }
+  }
+</style>

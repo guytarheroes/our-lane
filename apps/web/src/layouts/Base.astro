@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import ApologyPopup from '../components/ApologyPopup.astro';
 import { THEME_COOKIE, validTheme } from '../lib/theme.js';
 import { LANG_COOKIE, validLang } from '../lib/i18n.js';
 
@@ -38,5 +39,6 @@ const lang = validLang(Astro.cookies.get(LANG_COOKIE)?.value);
   <!-- break-words = ตาข่ายกันคำยาวเกินกล่อง (เบราว์เซอร์ตัดคำไทยเองอยู่แล้ว อันนี้แค่กันเคสที่ตัดไม่ได้จริง ๆ) -->
   <body class="min-h-dvh bg-bg font-body text-[15px] leading-[1.85] break-words text-body antialiased">
     <slot />
+    <ApologyPopup />
   </body>
 </html>
